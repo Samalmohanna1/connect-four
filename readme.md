@@ -1,6 +1,8 @@
-# Phaser Template
+# Connect Four
 
-This is a starter template for a phaser.js game. It includes the basic scenes for a game, fade transitions, and global settings.
+Classic Connect Four, the vertical checkers game.
+
+![studio logo.](assets/studio-logo.png)
 
 ## Instructions
 
