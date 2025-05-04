@@ -1,6 +1,6 @@
 {
-    "name": "phaser-template",
-    "version": "1.0.0",
+    "name": "connect-four",
+    "version": "0.0.1",
     "type": "module",
     "author": "SleepySam",
     "scripts": {
@@ -15,4 +15,3 @@
         "phaser": "^3.80.1"
     }
 }
-
