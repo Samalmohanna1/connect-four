@@ -25,10 +25,30 @@ export class Preloader extends Scene {
 
     preload() {
         this.load.setPath("assets");
+
+        this.load.image("title", "title.png");
+        this.load.image("howTo", "howTo.png");
+        this.load.image("gameBg", "gameBg.png");
+        this.load.image("board", "board.png");
+        this.load.image("startBtn", "startBtn.png");
+        this.load.image("howToBtn", "howToBtn.png");
+        this.load.image("blackCoin", "blackCoin.png");
+        this.load.image("redCoin", "redCoin.png");
+        this.load.spritesheet("howToSprite", "howto-sprite.png", {
+            frameWidth: 381,
+            frameHeight: 314,
+        });
     }
 
     create() {
-        //  When all the assets have loaded, Spritesheet animations that are used in the game can be made here.
+        this.anims.create({
+            key: "howTo",
+            frames: this.anims.generateFrameNumbers("howToSprite", {
+                frames: [0, 1, 2, 3],
+            }),
+            frameRate: 2,
+            repeat: -1,
+        });
 
         this.time.delayedCall(1000, () => {
             this.cameras.main.fadeOut(1000);
@@ -38,4 +58,3 @@ export class Preloader extends Scene {
         });
     }
 }
-

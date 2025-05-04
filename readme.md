@@ -1,12 +1,13 @@
 # Connect Four
 
+![game thumbnail graphic](public/assets/thumbnail.png)
+
 Classic Connect Four, the vertical checkers game.
 
-![studio logo.](assets/studio-logo.png)
+![studio logo](public/assets/studio-logo.png)
 
 ## Instructions
 
-1. Clone the repository.
-2. Install dependencies with `npm install`.
-3. Start the development server with `npm run dev`.
-4. If you want to build the project, run `npm run build`.
+1. Be the first to get four checkers in a row: Horizontally, Vertically, or diagonally.
+2. Click a column to drop your checker. It falls to the lowest empty spot.
+3. If the board fills up with no winner, it’s a tie.

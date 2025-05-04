@@ -21,6 +21,11 @@ export default {
 
     bodyTextStyle: {
         fontFamily: "Arial Black",
+        fontSize: 34,
+        color: colors.black500,
+    },
+    headingTextStyle: {
+        fontFamily: "Arial Black",
         fontSize: 64,
         color: colors.yellow500,
     },

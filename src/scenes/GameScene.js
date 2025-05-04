@@ -8,6 +8,12 @@ export class GameScene extends Scene {
 
     create() {
         this.cameras.main.fadeIn(1000);
+
+        this.add.image(globals.centerX, globals.centerY, "gameBg");
+
+        this.add
+            .image(globals.centerX, globals.centerY + 120, "board")
+            .setScale(0.8);
         this.add
             .text(
                 globals.centerX,
@@ -31,4 +37,3 @@ export class GameScene extends Scene {
         });
     }
 }
-
