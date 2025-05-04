@@ -3,6 +3,7 @@ import { GameScene } from "./scenes/GameScene";
 import { Game } from "phaser";
 import { GameOver } from "./scenes/GameOver";
 import { MainMenu } from "./scenes/MainMenu";
+import { HowTo } from "./scenes/HowTo";
 import { Preloader } from "./scenes/Preloader";
 import global from "./globals";
 import globals from "./globals";
@@ -23,11 +24,10 @@ const config = {
             gravity: { y: 400 },
         },
     },
-    scene: [Boot, Preloader, MainMenu, GameScene, GameOver],
+    scene: [Boot, Preloader, MainMenu, HowTo, GameScene, GameOver],
 };
 
 global.centerX = config.width / 2;
 global.centerY = config.height / 2;
 
 export default new Game(config);
-

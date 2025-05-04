@@ -14,7 +14,7 @@ export class GameOver extends Scene {
                 globals.centerX,
                 globals.centerY,
                 `Game Over\n\nClick to Restart`,
-                globals.bodyTextStyle
+                globals.headingTextStyle
             )
             .setAlign("center")
             .setOrigin(0.5);
@@ -29,4 +29,3 @@ export class GameOver extends Scene {
         });
     }
 }
-
