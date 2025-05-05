@@ -23,7 +23,7 @@ export class GameOver extends Scene {
             this.time.delayedCall(10, () => {
                 this.cameras.main.fadeOut(1000);
                 this.cameras.main.once("camerafadeoutcomplete", () => {
-                    this.scene.start("MainMenu");
+                    this.scene.start("GameScene");
                 });
             });
         });

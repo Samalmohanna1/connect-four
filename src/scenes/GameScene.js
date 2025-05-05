@@ -90,26 +90,13 @@ export class GameScene extends Scene {
 
         // Turn text
         this.turnText = this.add
-            .text(globals.centerX, 50, `Player ${this.currentPlayer}'s Turn`, {
-                fontFamily: "Arial",
-                fontSize: "48px",
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 4,
-            })
+            .text(
+                200,
+                50,
+                `Player ${this.currentPlayer}'s Turn`,
+                globals.bodyTextStyle
+            )
             .setOrigin(0.5);
-
-        // Game over text (initially hidden)
-        this.gameOverText = this.add
-            .text(globals.centerX, globals.centerY, "", {
-                fontFamily: "Arial",
-                fontSize: "64px",
-                color: "#ffffff",
-                stroke: "#000000",
-                strokeThickness: 6,
-            })
-            .setOrigin(0.5)
-            .setVisible(false);
     }
 
     highlightColumn(col) {
@@ -120,7 +107,7 @@ export class GameScene extends Scene {
         const x = boardStartX + col * slotSize;
         const y = boardStartY;
         this.columnHighlight.clear();
-        this.columnHighlight.fillStyle(0xffff00, 0.2);
+        this.columnHighlight.fillStyle(0xfff000, 0.3);
         this.columnHighlight.fillRect(
             x - slotSize / 2,
             y - slotSize / 2,
@@ -134,5 +121,78 @@ export class GameScene extends Scene {
         this.columnHighlight.setVisible(false);
     }
 
-    dropCoin(col) {}
+    dropCoin(col) {
+        if (this.gameEnded) return;
+        // Find lowest empty row (from bottom up)
+        for (let row = this.rows - 1; row >= 0; row--) {
+            if (this.slots[col][row].frame.name === 0) {
+                this.slots[col][row].setFrame(this.currentPlayer);
+                if (this.checkWin(col, row)) {
+                    this.handleGameOver(this.currentPlayer);
+                } else if (this.checkDraw()) {
+                    this.handleGameOver(0); // 0 = draw
+                } else {
+                    this.switchPlayer();
+                }
+                break;
+            }
+        }
+    }
+
+    switchPlayer() {
+        this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+        this.turnText.setText(`Player ${this.currentPlayer}'s Turn`);
+        this.previewCoin.setFrame(this.currentPlayer - 1);
+    }
+
+    checkWin(col, row) {
+        const player = this.currentPlayer;
+        const directions = [
+            [1, 0], // horizontal
+            [0, 1], // vertical
+            [1, 1], // diagonal /
+            [1, -1], // diagonal \
+        ];
+
+        for (const [dx, dy] of directions) {
+            let count = 1;
+            for (let i = 1; i < 4; i++) {
+                if (this.getSlot(col + i * dx, row + i * dy) === player)
+                    count++;
+                else break;
+            }
+            for (let i = 1; i < 4; i++) {
+                if (this.getSlot(col - i * dx, row - i * dy) === player)
+                    count++;
+                else break;
+            }
+            if (count >= 4) return true;
+        }
+        return false;
+    }
+
+    getSlot(col, row) {
+        if (col < 0 || col >= this.cols || row < 0 || row >= this.rows)
+            return null;
+        return this.slots[col][row].frame.name;
+    }
+
+    checkDraw() {
+        for (let col = 0; col < this.cols; col++) {
+            if (this.slots[col][0].frame.name === 0) return false;
+        }
+        return true;
+    }
+    handleGameOver(winner) {
+        this.gameEnded = true;
+        this.previewCoin.setVisible(false);
+        if (winner === 0) {
+            this.turnText.setText("Game Over: Draw!");
+        } else {
+            this.turnText.setText(`Player ${winner} Wins!`);
+            this.time.delayedCall(1000, () => {
+                this.scene.start("GameOver", { winner: this.currentPlayer });
+            });
+        }
+    }
 }
