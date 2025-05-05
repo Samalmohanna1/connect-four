@@ -29,14 +29,20 @@ export class Preloader extends Scene {
         this.load.image("title", "title.png");
         this.load.image("howTo", "howTo.png");
         this.load.image("gameBg", "gameBg.png");
-        this.load.image("board", "board.png");
         this.load.image("startBtn", "startBtn.png");
         this.load.image("howToBtn", "howToBtn.png");
-        this.load.image("blackCoin", "blackCoin.png");
-        this.load.image("redCoin", "redCoin.png");
+        this.load.image("boardFrame", "boardFrame.png");
         this.load.spritesheet("howToSprite", "howto-sprite.png", {
             frameWidth: 381,
             frameHeight: 314,
+        });
+        this.load.spritesheet("slot", "slot.png", {
+            frameWidth: 117,
+            frameHeight: 117,
+        });
+        this.load.spritesheet("coin", "coin.png", {
+            frameWidth: 95,
+            frameHeight: 95,
         });
     }
 
@@ -53,7 +59,7 @@ export class Preloader extends Scene {
         this.time.delayedCall(1000, () => {
             this.cameras.main.fadeOut(1000);
             this.cameras.main.once("camerafadeoutcomplete", () => {
-                this.scene.start("MainMenu");
+                this.scene.start("GameScene");
             });
         });
     }
