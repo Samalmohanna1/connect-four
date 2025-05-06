@@ -20,12 +20,14 @@ export default {
     colors,
 
     bodyTextStyle: {
-        fontFamily: "Arial Black",
+        fontFamily: "OpenSans",
+        fontStyle: "600",
         fontSize: 34,
         color: colors.black500,
     },
     headingTextStyle: {
-        fontFamily: "Arial Black",
+        fontFamily: "OpenSans",
+        fontStyle: "800",
         fontSize: 64,
         color: colors.yellow500,
     },
