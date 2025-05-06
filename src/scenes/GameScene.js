@@ -88,6 +88,9 @@ export class GameScene extends Scene {
                 globals.bodyTextStyle
             )
             .setOrigin(0.5);
+
+        this.winLine = this.add.graphics();
+        this.winLine.setDepth(40);
     }
 
     highlightColumn(col) {
@@ -149,17 +152,26 @@ export class GameScene extends Scene {
 
         for (const [dx, dy] of directions) {
             let count = 1;
+            let winPositions = [{ col, row }];
             for (let i = 1; i < 4; i++) {
-                if (this.getSlot(col + i * dx, row + i * dy) === player)
+                if (this.getSlot(col + i * dx, row + i * dy) === player) {
                     count++;
-                else break;
+                    winPositions.push({ col: col + i * dx, row: row + i * dy });
+                } else break;
             }
             for (let i = 1; i < 4; i++) {
-                if (this.getSlot(col - i * dx, row - i * dy) === player)
+                if (this.getSlot(col - i * dx, row - i * dy) === player) {
                     count++;
-                else break;
+                    winPositions.unshift({
+                        col: col - i * dx,
+                        row: row - i * dy,
+                    });
+                } else break;
             }
-            if (count >= 4) return true;
+            if (count >= 4) {
+                this.winPositions = winPositions;
+                return true;
+            }
         }
         return false;
     }
@@ -176,12 +188,36 @@ export class GameScene extends Scene {
         }
         return true;
     }
+
+    drawWinLine(positions) {
+        this.winLine.clear();
+        this.winLine.lineStyle(16, 0xf5f3ef, 1.0);
+        const slotSize = 117;
+        const boardStartX = globals.centerX - (7 * slotSize) / 2 + slotSize / 2;
+        const boardStartY = globals.centerY - (6 * slotSize) / 2 + slotSize / 2;
+
+        const first = positions[0];
+        const last = positions[positions.length - 1];
+        const x1 = boardStartX + first.col * slotSize;
+        const y1 = boardStartY + first.row * slotSize;
+        const x2 = boardStartX + last.col * slotSize;
+        const y2 = boardStartY + last.row * slotSize;
+
+        this.winLine.beginPath();
+        this.winLine.moveTo(x1, y1);
+        this.winLine.lineTo(x2, y2);
+        this.winLine.strokePath();
+        this.winLine.setVisible(true);
+    }
+
     handleGameOver(winner) {
         this.gameEnded = true;
         this.previewCoin.setVisible(false);
         this.dropZones.forEach((zone) => zone.disableInteractive());
         this.columnHighlight.setVisible(false);
-
+        if (winner !== 0) {
+            this.drawWinLine(this.winPositions);
+        }
         const overlay = this.add
             .rectangle(
                 globals.centerX,
