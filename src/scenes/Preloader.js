@@ -59,7 +59,7 @@ export class Preloader extends Scene {
         this.time.delayedCall(1000, () => {
             this.cameras.main.fadeOut(1000);
             this.cameras.main.once("camerafadeoutcomplete", () => {
-                this.scene.start("GameScene");
+                this.scene.start("MainMenu");
             });
         });
     }
