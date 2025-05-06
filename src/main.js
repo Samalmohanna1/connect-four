@@ -1,11 +1,10 @@
-import { Boot } from "./scenes/Boot";
-import { GameScene } from "./scenes/GameScene";
+import globals from "./globals";
 import { Game } from "phaser";
-import { GameOver } from "./scenes/GameOver";
+import { Boot } from "./scenes/Boot";
+import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
 import { HowTo } from "./scenes/HowTo";
-import { Preloader } from "./scenes/Preloader";
-import globals from "./globals";
+import { GameScene } from "./scenes/GameScene";
 
 const config = {
     type: Phaser.AUTO,
@@ -17,13 +16,7 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    physics: {
-        default: "arcade",
-        arcade: {
-            gravity: { y: 400 },
-        },
-    },
-    scene: [Boot, Preloader, MainMenu, HowTo, GameScene, GameOver],
+    scene: [Boot, Preloader, MainMenu, HowTo, GameScene],
 };
 
 globals.centerX = config.width / 2;
