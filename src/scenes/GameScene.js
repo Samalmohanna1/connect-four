@@ -24,7 +24,6 @@ export class GameScene extends Scene {
         this.boardRight = this.boardLeft + this.boardWidth;
         this.boardTop = globals.centerY - this.boardHeight / 2;
 
-        // Slot grid
         this.slots = [];
         for (let col = 0; col < this.cols; col++) {
             this.slots[col] = [];
@@ -35,7 +34,6 @@ export class GameScene extends Scene {
             }
         }
 
-        // Full-height drop zones
         this.dropZones = [];
         for (let col = 0; col < this.cols; col++) {
             const zone = this.add
@@ -55,26 +53,21 @@ export class GameScene extends Scene {
             this.dropZones.push(zone);
         }
 
-        // Floating preview coin
         this.previewCoin = this.add
             .sprite(0, 0, "coin", 0)
             .setVisible(false)
             .setDepth(10);
 
-        // Player turn initialization
         this.currentPlayer = 1; // 1 = red, 2 = black
         this.gameEnded = false;
 
-        // Input handling for preview coin
         this.input.on("pointermove", (pointer) => {
             if (this.gameEnded) return;
 
-            // Constrain X position to board bounds
             const minX = this.boardLeft + 95 / 2;
             const maxX = this.boardRight - 95 / 2;
             const x = Phaser.Math.Clamp(pointer.x, minX, maxX);
 
-            // Snap to column center
             const col = Math.floor((x - this.boardLeft) / slotSize);
             const snapX = this.boardLeft + col * slotSize + slotSize / 2;
 
@@ -84,15 +77,13 @@ export class GameScene extends Scene {
                 .setVisible(true);
         });
 
-        // Highlight overlay (for column hover)
         this.columnHighlight = this.add.graphics();
         this.columnHighlight.setVisible(false);
 
-        // Turn text
         this.turnText = this.add
             .text(
                 200,
-                50,
+                100,
                 `Player ${this.currentPlayer}'s Turn`,
                 globals.bodyTextStyle
             )
@@ -107,13 +98,16 @@ export class GameScene extends Scene {
         const x = boardStartX + col * slotSize;
         const y = boardStartY;
         this.columnHighlight.clear();
-        this.columnHighlight.fillStyle(0xfff000, 0.3);
-        this.columnHighlight.fillRect(
+        this.columnHighlight.fillStyle(0xfff000, 0.45);
+        const radius = 16;
+        this.columnHighlight.fillRoundedRect(
             x - slotSize / 2,
             y - slotSize / 2,
             slotSize,
-            6 * slotSize
+            6 * slotSize,
+            radius
         );
+        this.columnHighlight.blendMode = "SCREEN";
         this.columnHighlight.setVisible(true);
     }
 
@@ -123,7 +117,6 @@ export class GameScene extends Scene {
 
     dropCoin(col) {
         if (this.gameEnded) return;
-        // Find lowest empty row (from bottom up)
         for (let row = this.rows - 1; row >= 0; row--) {
             if (this.slots[col][row].frame.name === 0) {
                 this.slots[col][row].setFrame(this.currentPlayer);
@@ -186,13 +179,58 @@ export class GameScene extends Scene {
     handleGameOver(winner) {
         this.gameEnded = true;
         this.previewCoin.setVisible(false);
-        if (winner === 0) {
-            this.turnText.setText("Game Over: Draw!");
-        } else {
-            this.turnText.setText(`Player ${winner} Wins!`);
-            this.time.delayedCall(1000, () => {
-                this.scene.start("GameOver", { winner: this.currentPlayer });
-            });
-        }
+        this.dropZones.forEach((zone) => zone.disableInteractive());
+        this.columnHighlight.setVisible(false);
+
+        const overlay = this.add
+            .rectangle(
+                globals.centerX,
+                globals.centerY,
+                1920,
+                1080,
+                globals.colors.black600,
+                0.8
+            )
+            .setDepth(50)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setAlpha(0.1);
+
+        this.turnText
+            .setText(
+                winner === 0 ? "Game Over: Draw!" : `Player ${winner} Wins!`
+            )
+            .setDepth(60)
+            .setX(globals.centerX)
+            .setY(globals.centerY - 450)
+            .setStyle(globals.overlayTextStyle)
+            .setVisible(false);
+
+        this.restartText = this.add
+            .text(
+                globals.centerX,
+                globals.centerY - 300,
+                "Click anywhere to play again",
+                globals.overlayTextStyle
+            )
+            .setOrigin(0.5)
+            .setDepth(60)
+            .setVisible(false);
+
+        this.tweens.add({
+            targets: overlay,
+            alpha: 1,
+            duration: 1000,
+            ease: "Linear",
+            onComplete: () => {
+                this.turnText.setVisible(true);
+                this.restartText.setVisible(true);
+                overlay.on("pointerdown", () => {
+                    overlay.destroy();
+                    this.restartText.destroy();
+                    this.scene.restart();
+                });
+            },
+        });
     }
 }

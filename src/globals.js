@@ -25,10 +25,10 @@ export default {
         fontSize: 34,
         color: colors.black500,
     },
-    headingTextStyle: {
+    overlayTextStyle: {
         fontFamily: "OpenSans",
         fontStyle: "800",
         fontSize: 64,
-        color: colors.yellow500,
+        color: colors.white500,
     },
 };
