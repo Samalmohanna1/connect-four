@@ -32,6 +32,8 @@ export class Preloader extends Scene {
         this.load.image("startBtn", "startBtn.png");
         this.load.image("howToBtn", "howToBtn.png");
         this.load.image("boardFrame", "boardFrame.png");
+        this.load.image("sky", "sky.png");
+        this.load.image("hangingPlant", "hanging-plant.png");
         this.load.spritesheet("howToSprite", "howto-sprite.png", {
             frameWidth: 381,
             frameHeight: 314,
@@ -44,6 +46,10 @@ export class Preloader extends Scene {
             frameWidth: 95,
             frameHeight: 95,
         });
+        this.load.spritesheet("coffee", "coffee.png", {
+            frameWidth: 262,
+            frameHeight: 291,
+        });
     }
 
     create() {
@@ -55,11 +61,20 @@ export class Preloader extends Scene {
             frameRate: 2,
             repeat: -1,
         });
+        this.anims.create({
+            key: "coffee",
+            frames: this.anims.generateFrameNumbers("coffee", {
+                frames: [0, 1, 2],
+            }),
+
+            frameRate: 3,
+            repeat: -1,
+        });
 
         this.time.delayedCall(1000, () => {
             this.cameras.main.fadeOut(1000);
             this.cameras.main.once("camerafadeoutcomplete", () => {
-                this.scene.start("MainMenu");
+                this.scene.start("GameScene");
             });
         });
     }

@@ -8,6 +8,17 @@ export class GameScene extends Scene {
 
     create() {
         this.add.image(globals.centerX, globals.centerY, "gameBg");
+        this.coffee = this.add.sprite(240, 900, "coffee");
+        this.add.image(1760, 230, "hangingPlant");
+        const sky = this.add.image(2220, 200, "sky").setDepth(-1);
+
+        this.coffee.play("coffee");
+        this.tweens.add({
+            targets: sky,
+            x: "-=1100",
+            duration: 35000,
+            repeat: -1,
+        });
 
         this.boardFrame = this.add.image(
             globals.centerX,
@@ -83,7 +94,7 @@ export class GameScene extends Scene {
         this.turnText = this.add
             .text(
                 200,
-                100,
+                80,
                 `Player ${this.currentPlayer}'s Turn`,
                 globals.bodyTextStyle
             )
