@@ -13,35 +13,41 @@ export class GameScene extends Scene {
         const sky = this.add.image(2220, 200, "sky").setDepth(-1);
 
         this.coffee.play("coffee");
-        this.tweens.add({
+        this.skyTween = this.tweens.add({
             targets: sky,
             x: "-=1100",
             duration: 35000,
             repeat: -1,
         });
 
-        this.boardFrame = this.add.image(
-            globals.centerX,
-            globals.centerY + 57,
-            "boardFrame"
-        );
+        this.boardFrame = this.add
+            .image(globals.centerX, globals.centerY + 57, "boardFrame")
+            .setDepth(2);
 
-        const slotSize = 117;
+        this.slotSize = 117;
         this.cols = 7;
         this.rows = 6;
-        this.boardWidth = this.cols * slotSize;
-        this.boardHeight = this.rows * slotSize;
+        this.boardWidth = this.cols * this.slotSize;
+        this.boardHeight = this.rows * this.slotSize;
         this.boardLeft = globals.centerX - this.boardWidth / 2;
         this.boardRight = this.boardLeft + this.boardWidth;
         this.boardTop = globals.centerY - this.boardHeight / 2;
+        this.boardTopY = this.boardTopY =
+            globals.centerY -
+            (this.rows * this.slotSize) / 2 +
+            this.slotSize / 2;
 
         this.slots = [];
         for (let col = 0; col < this.cols; col++) {
             this.slots[col] = [];
             for (let row = 0; row < this.rows; row++) {
-                const x = this.boardLeft + col * slotSize + slotSize / 2;
-                const y = this.boardTop + row * slotSize + slotSize / 2;
-                this.slots[col][row] = this.add.sprite(x, y, "slot", 0);
+                const x =
+                    this.boardLeft + col * this.slotSize + this.slotSize / 2;
+                const y =
+                    this.boardTop + row * this.slotSize + this.slotSize / 2;
+                this.slots[col][row] = this.add
+                    .sprite(x, y, "slot", 0)
+                    .setDepth(2);
             }
         }
 
@@ -49,9 +55,9 @@ export class GameScene extends Scene {
         for (let col = 0; col < this.cols; col++) {
             const zone = this.add
                 .rectangle(
-                    this.boardLeft + col * slotSize + slotSize / 2,
+                    this.boardLeft + col * this.slotSize + this.slotSize / 2,
                     globals.centerY,
-                    slotSize,
+                    this.slotSize,
                     this.boardHeight,
                     0xffffff,
                     0
@@ -60,15 +66,19 @@ export class GameScene extends Scene {
             zone.column = col;
             zone.on("pointerover", () => this.highlightColumn(col));
             zone.on("pointerout", () => this.unhighlightColumn(col));
-            zone.on("pointerdown", () => this.dropCoin(col));
+            zone.on("pointerdown", () => {
+                if (!this.isAnimating) {
+                    this.dropCoin(col);
+                }
+            });
             this.dropZones.push(zone);
         }
 
         this.previewCoin = this.add
             .sprite(0, 0, "coin", 0)
             .setVisible(false)
-            .setDepth(10);
-
+            .setDepth(1);
+        this.isAnimating = false; //coinDrop animation flag
         this.currentPlayer = 1; // 1 = red, 2 = black
         this.gameEnded = false;
 
@@ -79,8 +89,9 @@ export class GameScene extends Scene {
             const maxX = this.boardRight - 95 / 2;
             const x = Phaser.Math.Clamp(pointer.x, minX, maxX);
 
-            const col = Math.floor((x - this.boardLeft) / slotSize);
-            const snapX = this.boardLeft + col * slotSize + slotSize / 2;
+            const col = Math.floor((x - this.boardLeft) / this.slotSize);
+            const snapX =
+                this.boardLeft + col * this.slotSize + this.slotSize / 2;
 
             this.previewCoin
                 .setPosition(snapX, 120)
@@ -106,22 +117,22 @@ export class GameScene extends Scene {
 
     highlightColumn(col) {
         if (this.gameEnded) return;
-        const slotSize = 117;
-        const boardStartX = globals.centerX - (7 * slotSize) / 2 + slotSize / 2;
-        const boardStartY = globals.centerY - (6 * slotSize) / 2 + slotSize / 2;
-        const x = boardStartX + col * slotSize;
+        const boardStartX =
+            globals.centerX - (7 * this.slotSize) / 2 + this.slotSize / 2;
+        const boardStartY =
+            globals.centerY - (6 * this.slotSize) / 2 + this.slotSize / 2;
+        const x = boardStartX + col * this.slotSize;
         const y = boardStartY;
         this.columnHighlight.clear();
-        this.columnHighlight.fillStyle(0xfff000, 0.45);
+        this.columnHighlight.fillStyle(0xfff000, 0.55);
         const radius = 16;
         this.columnHighlight.fillRoundedRect(
-            x - slotSize / 2,
-            y - slotSize / 2,
-            slotSize,
-            6 * slotSize,
+            x - this.slotSize / 2,
+            y - this.slotSize / 2,
+            this.slotSize,
+            6 * this.slotSize,
             radius
         );
-        this.columnHighlight.blendMode = "SCREEN";
         this.columnHighlight.setVisible(true);
     }
 
@@ -130,17 +141,45 @@ export class GameScene extends Scene {
     }
 
     dropCoin(col) {
-        if (this.gameEnded) return;
+        if (this.gameEnded || this.isAnimating) return;
+
         for (let row = this.rows - 1; row >= 0; row--) {
             if (this.slots[col][row].frame.name === 0) {
-                this.slots[col][row].setFrame(this.currentPlayer);
-                if (this.checkWin(col, row)) {
-                    this.handleGameOver(this.currentPlayer);
-                } else if (this.checkDraw()) {
-                    this.handleGameOver(0); // 0 = draw
-                } else {
-                    this.switchPlayer();
-                }
+                this.input.enabled = false;
+                this.isAnimating = true;
+                this.dropZones.forEach((zone) => zone.disableInteractive());
+
+                const targetY = this.boardTopY + row * this.slotSize;
+                const currentRow = row;
+
+                this.tweens.add({
+                    targets: this.previewCoin,
+                    y: targetY,
+                    x: this.previewCoin.x,
+                    duration: 700,
+                    ease: "Bounce.easeOut",
+                    onComplete: () => {
+                        this.slots[col][currentRow].setFrame(
+                            this.currentPlayer
+                        );
+                        this.previewCoin.setVisible(false);
+
+                        if (this.checkWin(col, currentRow)) {
+                            this.handleGameOver(this.currentPlayer);
+                        } else if (this.checkDraw()) {
+                            this.handleGameOver(0);
+                        } else {
+                            this.switchPlayer();
+                            if (!this.gameEnded) {
+                                this.dropZones.forEach((zone) =>
+                                    zone.setInteractive()
+                                );
+                                this.input.enabled = true;
+                            }
+                            this.isAnimating = false;
+                        }
+                    },
+                });
                 break;
             }
         }
@@ -203,16 +242,17 @@ export class GameScene extends Scene {
     drawWinLine(positions) {
         this.winLine.clear();
         this.winLine.lineStyle(16, 0xf5f3ef, 1.0);
-        const slotSize = 117;
-        const boardStartX = globals.centerX - (7 * slotSize) / 2 + slotSize / 2;
-        const boardStartY = globals.centerY - (6 * slotSize) / 2 + slotSize / 2;
+        const boardStartX =
+            globals.centerX - (7 * this.slotSize) / 2 + this.slotSize / 2;
+        const boardStartY =
+            globals.centerY - (6 * this.slotSize) / 2 + this.slotSize / 2;
 
         const first = positions[0];
         const last = positions[positions.length - 1];
-        const x1 = boardStartX + first.col * slotSize;
-        const y1 = boardStartY + first.row * slotSize;
-        const x2 = boardStartX + last.col * slotSize;
-        const y2 = boardStartY + last.row * slotSize;
+        const x1 = boardStartX + first.col * this.slotSize;
+        const y1 = boardStartY + first.row * this.slotSize;
+        const x2 = boardStartX + last.col * this.slotSize;
+        const y2 = boardStartY + last.row * this.slotSize;
 
         this.winLine.beginPath();
         this.winLine.moveTo(x1, y1);
@@ -226,6 +266,10 @@ export class GameScene extends Scene {
         this.previewCoin.setVisible(false);
         this.dropZones.forEach((zone) => zone.disableInteractive());
         this.columnHighlight.setVisible(false);
+        this.input.enabled = true;
+        this.coffee.stop();
+        this.skyTween.stop();
+
         if (winner !== 0) {
             this.drawWinLine(this.winPositions);
         }
@@ -267,7 +311,7 @@ export class GameScene extends Scene {
         this.tweens.add({
             targets: overlay,
             alpha: 1,
-            duration: 1000,
+            duration: 2000,
             ease: "Linear",
             onComplete: () => {
                 this.turnText.setVisible(true);
