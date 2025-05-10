@@ -85,18 +85,7 @@ export class GameScene extends Scene {
         this.input.on("pointermove", (pointer) => {
             if (this.gameEnded) return;
 
-            const minX = this.boardLeft + 95 / 2;
-            const maxX = this.boardRight - 95 / 2;
-            const x = Phaser.Math.Clamp(pointer.x, minX, maxX);
-
-            const col = Math.floor((x - this.boardLeft) / this.slotSize);
-            const snapX =
-                this.boardLeft + col * this.slotSize + this.slotSize / 2;
-
-            this.previewCoin
-                .setPosition(snapX, 120)
-                .setFrame(this.currentPlayer - 1)
-                .setVisible(true);
+            this.showPreviewCoin(pointer);
         });
 
         this.columnHighlight = this.add.graphics();
@@ -113,6 +102,20 @@ export class GameScene extends Scene {
 
         this.winLine = this.add.graphics();
         this.winLine.setDepth(40);
+    }
+
+    showPreviewCoin(pointer) {
+        const minX = this.boardLeft + 95 / 2;
+        const maxX = this.boardRight - 95 / 2;
+        const x = Phaser.Math.Clamp(pointer.x, minX, maxX);
+
+        const col = Math.floor((x - this.boardLeft) / this.slotSize);
+        const snapX = this.boardLeft + col * this.slotSize + this.slotSize / 2;
+
+        this.previewCoin
+            .setPosition(snapX, 120)
+            .setFrame(this.currentPlayer - 1)
+            .setVisible(true);
     }
 
     highlightColumn(col) {
@@ -174,9 +177,14 @@ export class GameScene extends Scene {
                                 this.dropZones.forEach((zone) =>
                                     zone.setInteractive()
                                 );
+
                                 this.input.enabled = true;
                             }
                             this.isAnimating = false;
+                            const pointer = this.input.activePointer;
+                            if (col !== null) {
+                                this.showPreviewCoin(pointer);
+                            }
                         }
                     },
                 });
