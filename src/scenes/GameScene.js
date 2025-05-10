@@ -66,7 +66,8 @@ export class GameScene extends Scene {
             zone.column = col;
             zone.on("pointerover", () => this.highlightColumn(col));
             zone.on("pointerout", () => this.unhighlightColumn(col));
-            zone.on("pointerdown", () => {
+            zone.on("pointerdown", (pointer) => {
+                this.showPreviewCoin(pointer);
                 if (!this.isAnimating) {
                     this.dropCoin(col);
                 }
@@ -84,7 +85,6 @@ export class GameScene extends Scene {
 
         this.input.on("pointermove", (pointer) => {
             if (this.gameEnded) return;
-
             this.showPreviewCoin(pointer);
         });
 
