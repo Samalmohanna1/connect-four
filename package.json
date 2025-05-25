@@ -12,6 +12,9 @@
         "vite": "^5.2.0"
     },
     "dependencies": {
-        "phaser": "^3.80.1"
+        "phaser": "^3.80.1",
+        "playroomkit": "^0.0.87",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1"
     }
 }
