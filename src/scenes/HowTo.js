@@ -16,14 +16,14 @@ export class HowTo extends Scene {
         howto.play("howTo");
 
         this.add
-            .image(globals.centerX - 430, globals.centerY + 280, "startBtn")
+            .image(globals.centerX - 430, globals.centerY + 280, "backBtn")
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
             .on("pointerdown", () => {
                 this.time.delayedCall(10, () => {
                     this.cameras.main.fadeOut(1000);
                     this.cameras.main.once("camerafadeoutcomplete", () => {
-                        this.scene.start("GameScene");
+                        this.scene.start("MainMenu");
                     });
                 });
             });

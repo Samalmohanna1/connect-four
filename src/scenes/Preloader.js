@@ -29,8 +29,12 @@ export class Preloader extends Scene {
         this.load.image("title", "title.png");
         this.load.image("howTo", "howTo.png");
         this.load.image("gameBg", "gameBg.png");
-        this.load.image("startBtn", "startBtn.png");
+        this.load.image("backBtn", "backBtn.png");
         this.load.image("howToBtn", "howToBtn.png");
+        this.load.image("singlePlayerBtn", "singlePlayerBtn.png");
+        this.load.image("multiPlayerBtn", "multiPlayerBtn.png");
+        this.load.image("playerOneTag", "playerOneTag.png");
+        this.load.image("playerTwoTag", "playerTwoTag.png");
         this.load.image("boardFrame", "boardFrame.png");
         this.load.image("sky", "sky.png");
         this.load.image("hangingPlant", "hanging-plant.png");

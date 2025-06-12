@@ -1,11 +1,18 @@
 import { Scene } from "phaser";
 import globals from "../globals";
 import { ConnectFour } from "../ConnectFour";
+import { isHost, myPlayer, setState, getState } from "playroomkit";
 
-export class GameScene extends Scene {
+export class MultiplayerScene extends Scene {
     constructor() {
-        super("GameScene");
+        super("MultiplayerScene");
         this.lastAnimatedMove = null;
+    }
+
+    init(data) {
+        this.isHost = isHost();
+        this.hostName = data.hostName;
+        this.guestName = data.guestName;
     }
 
     create() {
@@ -13,23 +20,87 @@ export class GameScene extends Scene {
         this.setupGameBoard();
         this.setupUI();
         this.setupInteraction();
-
         this.setupGameCore();
+
+        this.time.addEvent({
+            delay: 100,
+            callback: this.syncFromState,
+            callbackScope: this,
+            loop: true,
+        });
     }
 
     setupGameCore() {
-        this.gameCore = new ConnectFour(this.cols, this.rows);
+        this.gameCore = new ConnectFour();
+
+        if (this.isHost) {
+            // Host creates initial state and syncs it
+            const initialState = this.gameCore.getState();
+            initialState.lastMove = null;
+            initialState.moveRequest = null;
+
+            setState("game", initialState, true);
+        } else {
+            // Client syncs from existing state
+            const state = getState("game");
+            if (state) {
+                this.gameCore.setState(state);
+            }
+        }
     }
 
-    loadState(state) {
+    syncFromState() {
+        const state = getState("game");
         if (!state) return;
 
-        this.gameCore.board = state.board.map((col) => [...col]);
-        this.gameCore.currentPlayer = state.currentPlayer;
-        this.gameCore.gameEnded = state.gameEnded;
-        this.gameCore.winPositions = state.winPositions || [];
+        // Handle move requests (host only)
+        if (
+            this.isHost &&
+            state.moveRequest !== null &&
+            state.moveRequest !== undefined
+        ) {
+            console.log(
+                `Host received move request for column ${state.moveRequest}`
+            );
+
+            // Clear the move request immediately to prevent reprocessing
+            const moveRequest = state.moveRequest;
+            setState("game", { ...state, moveRequest: null });
+
+            this.processPlayerMove(moveRequest);
+            return; // Exit early to prevent state conflicts
+        }
+
+        // Update local game state using ConnectFour's built-in method
+        this.gameCore.setState(state);
+
+        // Handle animations
+        if (state.lastMove && this.shouldAnimateMove(state.lastMove)) {
+            this.animateCoinDrop(
+                state.lastMove.col,
+                state.lastMove.row,
+                state.lastMove.player
+            );
+            this.lastAnimatedMove = { ...state.lastMove };
+        }
+
+        // Update UI if not animating
+        if (!this.gameCore.isAnimating && !this.gameCore.gameEnded) {
+            this.updateBoard();
+            this.updateTurnText();
+        }
     }
 
+    shouldAnimateMove(move) {
+        return (
+            !this.lastAnimatedMove ||
+            move.col !== this.lastAnimatedMove.col ||
+            move.row !== this.lastAnimatedMove.row ||
+            move.player !== this.lastAnimatedMove.player
+        );
+    }
+
+    // setupBackground() - UNCHANGED
     setupBackground() {
         this.add.image(globals.centerX, globals.centerY, "gameBg");
         this.coffee = this.add.sprite(240, 900, "coffee");
@@ -45,6 +116,7 @@ export class GameScene extends Scene {
         });
     }
 
+    // setupGameBoard() - UNCHANGED
     setupGameBoard() {
         this.slotSize = 117;
         this.cols = 7;
@@ -92,6 +164,7 @@ export class GameScene extends Scene {
             .setOrigin(0.5);
     }
 
+    // setupInteraction() - UNCHANGED (except removal of unused isAnimating check)
     setupInteraction() {
         this.dropZones = [];
         for (let col = 0; col < this.cols; col++) {
@@ -106,8 +179,6 @@ export class GameScene extends Scene {
                 )
                 .setInteractive({ useHandCursor: true });
             zone.column = col;
-            // zone.on("pointerover", () => this.highlightColumn(col));
-            // zone.on("pointerout", () => this.unhighlightColumn(col));
             zone.on("pointerdown", (pointer) => {
                 this.showPreviewCoin(pointer);
                 if (!this.gameCore.isAnimating) {
@@ -121,7 +192,6 @@ export class GameScene extends Scene {
             .sprite(0, 0, "coin", 0)
             .setVisible(false)
             .setDepth(1);
-
         this.columnHighlight = this.add.graphics();
         this.columnHighlight.setVisible(false);
 
@@ -133,84 +203,93 @@ export class GameScene extends Scene {
 
     onColumnClick(col) {
         if (this.gameCore.gameEnded) return;
-        console.log(
-            `Player ${this.gameCore.currentPlayer} selected column ${col}`
-        );
-        this.animateCoinDrop(col);
+
+        const gameState = getState("game");
+        if (!gameState) return;
+
+        const isMyTurn =
+            (this.isHost && gameState.currentPlayer === 1) ||
+            (!this.isHost && gameState.currentPlayer === 2);
+
+        if (!isMyTurn) {
+            console.log("Not your turn!");
+            return;
+        }
+
+        if (this.isHost) {
+            this.processPlayerMove(col);
+        } else {
+            setState("game", { ...gameState, moveRequest: col });
+        }
     }
 
     processPlayerMove(col) {
+        console.log(`before move: Player ${this.gameCore.currentPlayer}`);
         const move = this.gameCore.dropCoin(col);
         if (!move) {
             console.log(`Invalid move in column ${col}`);
             return;
         }
 
-        console.log(
-            `Processing move: Player ${this.gameCore.currentPlayer} dropped coin at column ${move.col}, row ${move.row}`
-        );
-
-        const win = this.gameCore.checkWin(move.col, move.row);
-        const draw = this.gameCore.checkDraw();
-
-        if (win || draw) {
-            console.log(
-                win
-                    ? `Player ${this.gameCore.currentPlayer} won the game!`
-                    : "Game ended in a draw"
-            );
-            this.gameCore.endGame(win ? this.gameCore.currentPlayer : 0);
-        } else {
-            const currentPlayer = this.gameCore.currentPlayer;
-            console.log(
-                `Turn switched from Player ${currentPlayer} to Player ${this.gameCore.currentPlayer}`
-            );
-        }
-
-        this.updateBoard();
-        this.updateTurnText();
-
-        if (this.gameCore.gameEnded) {
-            this.handleGameOver(this.gameCore.currentPlayer);
+        if (this.isHost) {
+            // Use ConnectFour's getState method for consistency
+            const currentState = this.gameCore.getState();
+            setState("game", {
+                ...currentState,
+                lastMove: move,
+                moveRequest: null, // Ensure it's cleared
+            });
+            console.log("Host updated game state");
         }
     }
 
-    animateCoinDrop(col) {
-        const dropResult = this.gameCore.dropCoin(col);
-        if (!dropResult) return;
+    animateCoinDrop(col, row, player) {
+        const targetY = this.boardTopY + row * this.slotSize;
+        const targetX =
+            this.boardLeft + col * this.slotSize + this.slotSize / 2;
 
-        const { col: colIndex, row, player } = dropResult;
+        const coin = this.add
+            .sprite(targetX, 120, "coin", player - 1)
+            .setDepth(1)
+            .setVisible(true);
 
         this.input.enabled = false;
         this.dropZones.forEach((zone) => zone.disableInteractive());
 
-        const targetY = this.boardTopY + row * this.slotSize;
-
         this.tweens.add({
-            targets: this.previewCoin,
+            targets: coin,
             y: targetY,
-            x: this.previewCoin.x,
             duration: 700,
             ease: "Bounce.easeOut",
             onComplete: () => {
-                this.slots[colIndex][row].setFrame(player - 1);
-                this.previewCoin.setVisible(false);
+                this.slots[col][row].setFrame(player);
+                coin.destroy();
 
                 this.updateBoard();
                 this.updateTurnText();
 
-                if (this.gameCore.gameEnded) {
-                    this.handleGameOver(player);
+                // Use ConnectFour's finishAnimation method
+                this.gameCore.finishAnimation();
+
+                // Sync the animation state
+                if (this.isHost) {
+                    const currentState = this.gameCore.getState();
+                    setState("game", currentState);
+                }
+
+                const state = getState("game");
+                if (state.gameEnded) {
+                    this.handleGameOver(state.currentPlayer);
                 } else {
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
-                    this.gameCore.finishAnimation();
                     this.showPreviewCoin(this.input.activePointer);
                 }
             },
         });
     }
 
+    // showPreviewCoin() - UNCHANGED
     showPreviewCoin(pointer) {
         if (this.gameCore.gameEnded) return;
 
@@ -221,41 +300,37 @@ export class GameScene extends Scene {
         const col = Math.floor((x - this.boardLeft) / this.slotSize);
         const snapX = this.boardLeft + col * this.slotSize + this.slotSize / 2;
 
-        let coinFrame = this.gameCore.currentPlayer - 1;
+        const gameState = getState("game");
+        if (!gameState) return;
 
-        this.previewCoin
-            .setPosition(snapX, 120)
-            .setFrame(coinFrame)
-            .setVisible(true);
+        const isMyTurn =
+            (this.isHost && gameState.currentPlayer === 1) ||
+            (!this.isHost && gameState.currentPlayer === 2);
+        if (isMyTurn) {
+            let coinFrame = gameState.currentPlayer - 1;
+            this.previewCoin
+                .setPosition(snapX, 120)
+                .setFrame(coinFrame)
+                .setVisible(true);
+        } else {
+            this.previewCoin.setVisible(false);
+        }
     }
 
-    // highlightColumn(col) {
-    //     if (this.gameCore.gameEnded) return;
-
-    //     const boardStartX =
-    //         globals.centerX - (7 * this.slotSize) / 2 + this.slotSize / 2;
-    //     const boardStartY =
-    //         globals.centerY - (6 * this.slotSize) / 2 + this.slotSize / 2;
-    //     const x = boardStartX + col * this.slotSize;
-
-    //     this.columnHighlight.clear();
-    //     this.columnHighlight.fillStyle(0xfff000, 0.55);
-    //     this.columnHighlight.fillRoundedRect(
-    //         x - this.slotSize / 2,
-    //         boardStartY - this.slotSize / 2,
-    //         this.slotSize,
-    //         6 * this.slotSize,
-    //         16
-    //     );
-    //     this.columnHighlight.setVisible(true);
-    // }
-
-    // unhighlightColumn() {
-    //     this.columnHighlight.setVisible(false);
-    // }
-
     updateTurnText() {
-        this.turnText.setText(`Player ${this.gameCore.currentPlayer}'s Turn`);
+        const gameState = getState("game");
+        if (!gameState) return;
+
+        let playerName;
+        if (gameState.currentPlayer === 1) {
+            playerName = this.hostName;
+        } else if (gameState.currentPlayer === 2) {
+            playerName = this.guestName;
+        } else {
+            playerName = "Unknown";
+        }
+
+        this.turnText.setText(`${playerName}'s Turn`);
     }
 
     updateBoard() {
@@ -266,6 +341,7 @@ export class GameScene extends Scene {
         });
     }
 
+    // drawWinLine() - UNCHANGED
     drawWinLine(positions) {
         this.winLine.clear();
         this.winLine.lineStyle(16, 0xf5f3ef, 1.0);
@@ -317,13 +393,16 @@ export class GameScene extends Scene {
 
         this.turnText
             .setText(
-                winner === 0 ? "Game Over: Draw!" : `Player ${winner} Wins!`
+                winner === 0
+                    ? "Game Over: Draw!"
+                    : winner === 1
+                    ? `${this.hostName} Wins!`
+                    : `${this.guestName} Wins!`
             )
             .setDepth(60)
             .setX(globals.centerX)
             .setY(globals.centerY - 450)
-            .setStyle(globals.overlayTextStyle)
-            .setVisible(false);
+            .setStyle(globals.overlayTextStyle);
 
         this.restartText = this.add
             .text(
@@ -350,6 +429,15 @@ export class GameScene extends Scene {
                 this.restartText.setVisible(true);
                 overlay.on("pointerdown", () => {
                     console.log("Game restarting...");
+
+                    if (this.isHost) {
+                        this.gameCore.reset();
+                        const resetState = this.gameCore.getState();
+                        resetState.lastMove = null;
+                        resetState.moveRequest = null;
+                        setState("game", resetState);
+                    }
+
                     overlay.destroy();
                     this.restartText.destroy();
                     this.scene.restart();
