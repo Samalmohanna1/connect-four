@@ -11,16 +11,22 @@ export class ConnectFour {
 
     getState() {
         return {
-            board: this.board,
+            board: this.board.map((col) => [...col]), // Deep clone to prevent reference issues
             currentPlayer: this.currentPlayer,
             gameEnded: this.gameEnded,
+            winPositions: [...this.winPositions], // Deep clone positions
+            isAnimating: this.isAnimating,
         };
     }
 
     setState(state) {
-        this.board = state.board;
+        if (!state) return;
+
+        this.board = state.board.map((col) => [...col]); // Deep clone incoming state
         this.currentPlayer = state.currentPlayer;
         this.gameEnded = state.gameEnded;
+        this.winPositions = state.winPositions ? [...state.winPositions] : [];
+        this.isAnimating = state.isAnimating || false;
     }
 
     createEmptyBoard() {
@@ -35,13 +41,6 @@ export class ConnectFour {
     }
 
     dropCoin(col) {
-        // console.log(
-        //     `ConnectFour: Attempting to drop coin in column ${col} for Player ${this.currentPlayer}`
-        // );
-        // console.log(
-        //     `ConnectFour: Game state - gameEnded: ${this.gameEnded}, isAnimating: ${this.isAnimating}`
-        // );
-
         if (this.gameEnded) {
             console.log("ConnectFour: Move rejected - game has ended");
             return null;
@@ -52,7 +51,6 @@ export class ConnectFour {
             return null;
         }
 
-        // Log the state of the target column
         if (col < 0 || col >= this.cols) {
             console.error(
                 `ConnectFour: Invalid column ${col} - out of bounds [0-${
@@ -62,22 +60,41 @@ export class ConnectFour {
             return null;
         }
 
-        // console.log(
-        //     `ConnectFour: Current state of column ${col}:`,
-        //     this.board[col]
-        // );
-
         for (let row = this.rows - 1; row >= 0; row--) {
             if (this.board[col][row] === 0) {
-                // console.log(
-                //     `ConnectFour: Found empty slot at row ${row} in column ${col}`
-                // );
                 this.isAnimating = true;
+
+                // Place the coin
                 this.board[col][row] = this.currentPlayer;
-                // console.log(
-                //     `ConnectFour: Placed Player ${this.currentPlayer}'s coin at column ${col}, row ${row}`
-                // );
-                return { col, row };
+                console.log(
+                    `ConnectFour: Placed Player ${this.currentPlayer}'s coin at column ${col}, row ${row}`
+                );
+
+                // Store the move details
+                const move = { col, row, player: this.currentPlayer };
+
+                // Check for win condition
+                if (this.checkWin(col, row)) {
+                    console.log(
+                        `ConnectFour: Player ${this.currentPlayer} wins!`
+                    );
+                    this.endGame(this.currentPlayer);
+                    return move;
+                }
+
+                // Check for draw condition
+                if (this.checkDraw()) {
+                    console.log("ConnectFour: Game is a draw!");
+                    this.endGame(0); // 0 represents a draw
+                    return move;
+                }
+
+                // Switch to next player (only if game hasn't ended)
+                if (!this.gameEnded) {
+                    this.switchPlayer();
+                }
+
+                return move;
             }
         }
 

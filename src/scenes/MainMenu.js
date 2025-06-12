@@ -1,6 +1,6 @@
 import { Scene } from "phaser";
 import globals from "../globals";
-import { insertCoin } from "playroomkit";
+import { insertCoin, onPlayerJoin } from "playroomkit";
 
 export class MainMenu extends Scene {
     constructor() {
@@ -14,6 +14,8 @@ export class MainMenu extends Scene {
     create() {
         this.cameras.main.fadeIn(1000);
 
+        this.hostName = "host";
+        this.guestName = "guest";
         if (this.hasPlayroomRoomInUrl()) {
             this.launchMultiplayer();
         }
@@ -31,7 +33,7 @@ export class MainMenu extends Scene {
                 this.time.delayedCall(10, () => {
                     this.cameras.main.fadeOut(1000);
                     this.cameras.main.once("camerafadeoutcomplete", () => {
-                        this.scene.start("GameScene", { mode: "singleplayer" });
+                        this.scene.start("GameScene");
                     });
                 });
             });
@@ -60,8 +62,31 @@ export class MainMenu extends Scene {
                 });
             });
     }
-    launchMultiplayer() {
-        insertCoin({ maxPlayersPerRoom: 2 });
-        this.scene.start("GameScene", { mode: "multiplayer" });
+    async launchMultiplayer() {
+        try {
+            await insertCoin({ maxPlayersPerRoom: 2 });
+
+            const players = [];
+            const removeListener = onPlayerJoin((player) => {
+                players.push(player);
+
+                if (players.length === 2) {
+                    const hostPlayer =
+                        players.find((p) => p.isHost) || players[1];
+                    const guestPlayer = players.find((p) => p !== hostPlayer);
+
+                    const hostName = hostPlayer.getProfile().name || "Host";
+                    const guestName = guestPlayer.getProfile().name || "Guest";
+
+                    removeListener(); // Clean up
+                    this.scene.start("MultiplayerScene", {
+                        hostName,
+                        guestName,
+                    });
+                }
+            });
+        } catch (error) {
+            console.error("Playroom init failed:", error);
+        }
     }
 }
