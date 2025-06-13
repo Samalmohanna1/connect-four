@@ -9,6 +9,23 @@ export class GameScene extends Scene {
     }
 
     create() {
+        if (!this.sys.game.device.os.desktop) {
+            let lastTap = 0;
+            this.input.on("pointerup", (pointer) => {
+                let currentTime = pointer.event.timeStamp;
+                let tapLength = currentTime - lastTap;
+                if (tapLength < 300 && tapLength > 0) {
+                    if (this.scale.isFullscreen) {
+                        this.scale.stopFullscreen();
+                    } else {
+                        this.scale.startFullscreen();
+                    }
+                    lastTap = 0;
+                } else {
+                    lastTap = currentTime;
+                }
+            });
+        }
         this.setupBackground();
         this.setupGameBoard();
         this.setupUI();
