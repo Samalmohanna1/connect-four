@@ -14,6 +14,56 @@ export class MainMenu extends Scene {
     create() {
         this.cameras.main.fadeIn(1000);
 
+        if (!this.sys.game.device.os.desktop) {
+            let rotateText;
+            if (!this.sys.game.scale.isLandscape) {
+                rotateText = this.add
+                    .text(
+                        this.scale.width / 2,
+                        140,
+                        `Rotate your device and double tap to toggle fullscreen on/off.`,
+                        {
+                            ...globals.bodyTextStyle,
+                            backgroundColor: "#ffffef",
+                            padding: { x: 20, y: 20 },
+                        }
+                    )
+                    .setOrigin(0.5)
+                    .setDepth(20);
+            } else if (this.sys.game.scale.isLandscape) {
+                rotateText = this.add
+                    .text(
+                        this.scale.width / 2,
+                        140,
+                        `Double tap to toggle fullscreen on/off.`,
+                        {
+                            ...globals.bodyTextStyle,
+                            backgroundColor: "#ffffef",
+                            padding: { x: 20, y: 20 },
+                        }
+                    )
+                    .setOrigin(0.5)
+                    .setDepth(20);
+            }
+
+            let lastTap = 0;
+            this.input.on("pointerup", (pointer) => {
+                let currentTime = pointer.event.timeStamp;
+                let tapLength = currentTime - lastTap;
+                if (tapLength < 300 && tapLength > 0) {
+                    rotateText.setVisible(false);
+                    if (this.scale.isFullscreen) {
+                        this.scale.stopFullscreen();
+                    } else {
+                        this.scale.startFullscreen();
+                    }
+                    lastTap = 0;
+                } else {
+                    lastTap = currentTime;
+                }
+            });
+        }
+
         this.hostName = "host";
         this.guestName = "guest";
         if (this.hasPlayroomRoomInUrl()) {
