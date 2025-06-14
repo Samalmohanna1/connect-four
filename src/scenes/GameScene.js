@@ -99,14 +99,17 @@ export class GameScene extends Scene {
     }
 
     setupUI() {
-        this.turnText = this.add
-            .text(
-                200,
-                80,
-                `Player ${this.gameCore?.currentPlayer || 1}'s Turn`,
-                globals.bodyTextStyle
-            )
-            .setOrigin(0.5);
+        const bgColor = globals.colors.red600;
+
+        this.turnText = this.add.text(
+            0,
+            0,
+            `Player ${this.gameCore?.currentPlayer || 1}'s Turn`,
+            {
+                ...globals.turnTextStyle,
+                backgroundColor: bgColor,
+            }
+        );
     }
 
     setupInteraction() {
@@ -123,8 +126,6 @@ export class GameScene extends Scene {
                 )
                 .setInteractive({ useHandCursor: true });
             zone.column = col;
-            // zone.on("pointerover", () => this.highlightColumn(col));
-            // zone.on("pointerout", () => this.unhighlightColumn(col));
             zone.on("pointerdown", (pointer) => {
                 this.showPreviewCoin(pointer);
                 if (!this.gameCore.isAnimating) {
@@ -150,9 +151,6 @@ export class GameScene extends Scene {
 
     onColumnClick(col) {
         if (this.gameCore.gameEnded) return;
-        console.log(
-            `Player ${this.gameCore.currentPlayer} selected column ${col}`
-        );
         this.animateCoinDrop(col);
     }
 
@@ -163,25 +161,13 @@ export class GameScene extends Scene {
             return;
         }
 
-        console.log(
-            `Processing move: Player ${this.gameCore.currentPlayer} dropped coin at column ${move.col}, row ${move.row}`
-        );
-
         const win = this.gameCore.checkWin(move.col, move.row);
         const draw = this.gameCore.checkDraw();
 
         if (win || draw) {
-            console.log(
-                win
-                    ? `Player ${this.gameCore.currentPlayer} won the game!`
-                    : "Game ended in a draw"
-            );
             this.gameCore.endGame(win ? this.gameCore.currentPlayer : 0);
         } else {
             const currentPlayer = this.gameCore.currentPlayer;
-            console.log(
-                `Turn switched from Player ${currentPlayer} to Player ${this.gameCore.currentPlayer}`
-            );
         }
 
         this.updateBoard();
@@ -246,33 +232,15 @@ export class GameScene extends Scene {
             .setVisible(true);
     }
 
-    // highlightColumn(col) {
-    //     if (this.gameCore.gameEnded) return;
-
-    //     const boardStartX =
-    //         globals.centerX - (7 * this.slotSize) / 2 + this.slotSize / 2;
-    //     const boardStartY =
-    //         globals.centerY - (6 * this.slotSize) / 2 + this.slotSize / 2;
-    //     const x = boardStartX + col * this.slotSize;
-
-    //     this.columnHighlight.clear();
-    //     this.columnHighlight.fillStyle(0xfff000, 0.55);
-    //     this.columnHighlight.fillRoundedRect(
-    //         x - this.slotSize / 2,
-    //         boardStartY - this.slotSize / 2,
-    //         this.slotSize,
-    //         6 * this.slotSize,
-    //         16
-    //     );
-    //     this.columnHighlight.setVisible(true);
-    // }
-
-    // unhighlightColumn() {
-    //     this.columnHighlight.setVisible(false);
-    // }
-
     updateTurnText() {
-        this.turnText.setText(`Player ${this.gameCore.currentPlayer}'s Turn`);
+        const bgColor =
+            this.gameCore?.currentPlayer === 1
+                ? globals.colors.red600
+                : globals.colors.black500;
+
+        this.turnText
+            .setText(`Player ${this.gameCore.currentPlayer}'s Turn`)
+            .setStyle({ backgroundColor: bgColor });
     }
 
     updateBoard() {
@@ -340,7 +308,8 @@ export class GameScene extends Scene {
             .setX(globals.centerX)
             .setY(globals.centerY - 450)
             .setStyle(globals.overlayTextStyle)
-            .setVisible(false);
+            .setVisible(false)
+            .setOrigin(0.5);
 
         this.restartText = this.add
             .text(
@@ -353,10 +322,6 @@ export class GameScene extends Scene {
             .setDepth(60)
             .setVisible(false);
 
-        console.log(
-            `Game over! ${winner === 0 ? "Draw" : "Player " + winner + " won"}`
-        );
-
         this.tweens.add({
             targets: overlay,
             alpha: 1,
@@ -366,7 +331,6 @@ export class GameScene extends Scene {
                 this.turnText.setVisible(true);
                 this.restartText.setVisible(true);
                 overlay.on("pointerdown", () => {
-                    console.log("Game restarting...");
                     overlay.destroy();
                     this.restartText.destroy();
                     this.scene.restart();

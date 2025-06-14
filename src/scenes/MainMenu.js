@@ -73,8 +73,8 @@ export class MainMenu extends Scene {
         this.add.image(globals.centerX, globals.centerY, "title");
         this.add
             .image(
-                globals.centerX - 420,
-                globals.centerY + 60,
+                globals.centerX - 620,
+                globals.centerY + 100,
                 "singlePlayerBtn"
             )
             .setInteractive({ useHandCursor: true })
@@ -89,8 +89,8 @@ export class MainMenu extends Scene {
             });
         this.add
             .image(
-                globals.centerX - 420,
-                globals.centerY + 180,
+                globals.centerX - 210,
+                globals.centerY + 100,
                 "multiPlayerBtn"
             )
             .setInteractive({ useHandCursor: true })
@@ -100,7 +100,7 @@ export class MainMenu extends Scene {
             });
 
         this.add
-            .image(globals.centerX - 420, globals.centerY + 300, "howToBtn")
+            .image(globals.centerX - 410, globals.centerY + 250, "howToBtn")
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
             .on("pointerdown", () => {
