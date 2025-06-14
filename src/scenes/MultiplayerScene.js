@@ -1,7 +1,7 @@
 import { Scene } from "phaser";
 import globals from "../globals";
 import { ConnectFour } from "../ConnectFour";
-import { isHost, myPlayer, setState, getState } from "playroomkit";
+import { isHost, setState, getState } from "playroomkit";
 
 export class MultiplayerScene extends Scene {
     constructor() {
@@ -52,14 +52,12 @@ export class MultiplayerScene extends Scene {
         this.gameCore = new ConnectFour();
 
         if (this.isHost) {
-            // Host creates initial state and syncs it
             const initialState = this.gameCore.getState();
             initialState.lastMove = null;
             initialState.moveRequest = null;
 
             setState("game", initialState, true);
         } else {
-            // Client syncs from existing state
             const state = getState("game");
             if (state) {
                 this.gameCore.setState(state);
@@ -71,28 +69,20 @@ export class MultiplayerScene extends Scene {
         const state = getState("game");
         if (!state) return;
 
-        // Handle move requests (host only)
         if (
             this.isHost &&
             state.moveRequest !== null &&
             state.moveRequest !== undefined
         ) {
-            console.log(
-                `Host received move request for column ${state.moveRequest}`
-            );
-
-            // Clear the move request immediately to prevent reprocessing
             const moveRequest = state.moveRequest;
             setState("game", { ...state, moveRequest: null });
 
             this.processPlayerMove(moveRequest);
-            return; // Exit early to prevent state conflicts
+            return;
         }
 
-        // Update local game state using ConnectFour's built-in method
         this.gameCore.setState(state);
 
-        // Handle animations
         if (state.lastMove && this.shouldAnimateMove(state.lastMove)) {
             this.animateCoinDrop(
                 state.lastMove.col,
@@ -102,7 +92,6 @@ export class MultiplayerScene extends Scene {
             this.lastAnimatedMove = { ...state.lastMove };
         }
 
-        // Update UI if not animating
         if (!this.gameCore.isAnimating && !this.gameCore.gameEnded) {
             this.updateBoard();
             this.updateTurnText();
@@ -118,7 +107,6 @@ export class MultiplayerScene extends Scene {
         );
     }
 
-    // setupBackground() - UNCHANGED
     setupBackground() {
         this.add.image(globals.centerX, globals.centerY, "gameBg");
         this.coffee = this.add.sprite(240, 900, "coffee");
@@ -134,7 +122,6 @@ export class MultiplayerScene extends Scene {
         });
     }
 
-    // setupGameBoard() - UNCHANGED
     setupGameBoard() {
         this.slotSize = 117;
         this.cols = 7;
@@ -172,17 +159,33 @@ export class MultiplayerScene extends Scene {
     }
 
     setupUI() {
-        this.turnText = this.add
-            .text(
-                200,
-                80,
-                `Player ${this.gameCore?.currentPlayer || 1}'s Turn`,
-                globals.bodyTextStyle
-            )
-            .setOrigin(0.5);
+        const bgColor = globals.colors.red600;
+
+        this.turnText = this.add.text(
+            0,
+            0,
+            `Player ${this.gameCore?.currentPlayer || 1}'s turn`,
+            {
+                ...globals.turnTextStyle,
+                backgroundColor: bgColor,
+            }
+        );
+
+        // this.add
+        //     .image(1800, 1000, "backBtn")
+        //     .setInteractive({ useHandCursor: true })
+        //     .setOrigin(0.5)
+        //     .on("pointerdown", () => {
+        //         this.time.delayedCall(10, () => {
+        //             this.cameras.main.fadeOut(1000);
+        //             this.cameras.main.once("camerafadeoutcomplete", () => {
+        //                 leaveRoom();
+        //                 this.scene.start("MainMenu");
+        //             });
+        //         });
+        //     });
     }
 
-    // setupInteraction() - UNCHANGED (except removal of unused isAnimating check)
     setupInteraction() {
         this.dropZones = [];
         for (let col = 0; col < this.cols; col++) {
@@ -230,7 +233,6 @@ export class MultiplayerScene extends Scene {
             (!this.isHost && gameState.currentPlayer === 2);
 
         if (!isMyTurn) {
-            console.log("Not your turn!");
             return;
         }
 
@@ -240,9 +242,7 @@ export class MultiplayerScene extends Scene {
             setState("game", { ...gameState, moveRequest: col });
         }
     }
-
     processPlayerMove(col) {
-        console.log(`before move: Player ${this.gameCore.currentPlayer}`);
         const move = this.gameCore.dropCoin(col);
         if (!move) {
             console.log(`Invalid move in column ${col}`);
@@ -250,14 +250,12 @@ export class MultiplayerScene extends Scene {
         }
 
         if (this.isHost) {
-            // Use ConnectFour's getState method for consistency
             const currentState = this.gameCore.getState();
             setState("game", {
                 ...currentState,
                 lastMove: move,
-                moveRequest: null, // Ensure it's cleared
+                moveRequest: null,
             });
-            console.log("Host updated game state");
         }
     }
 
@@ -286,10 +284,8 @@ export class MultiplayerScene extends Scene {
                 this.updateBoard();
                 this.updateTurnText();
 
-                // Use ConnectFour's finishAnimation method
                 this.gameCore.finishAnimation();
 
-                // Sync the animation state
                 if (this.isHost) {
                     const currentState = this.gameCore.getState();
                     setState("game", currentState);
@@ -307,7 +303,6 @@ export class MultiplayerScene extends Scene {
         });
     }
 
-    // showPreviewCoin() - UNCHANGED
     showPreviewCoin(pointer) {
         if (this.gameCore.gameEnded) return;
 
@@ -340,15 +335,20 @@ export class MultiplayerScene extends Scene {
         if (!gameState) return;
 
         let playerName;
+        let bgColor;
         if (gameState.currentPlayer === 1) {
             playerName = this.hostName;
+            bgColor = globals.colors.red600;
         } else if (gameState.currentPlayer === 2) {
             playerName = this.guestName;
+            bgColor = globals.colors.black500;
         } else {
             playerName = "Unknown";
+            bgColor = globals.colors.black500;
         }
 
-        this.turnText.setText(`${playerName}'s Turn`);
+        this.turnText.setText(`${playerName}'s turn`);
+        this.turnText.setStyle({ backgroundColor: bgColor });
     }
 
     updateBoard() {
@@ -359,7 +359,6 @@ export class MultiplayerScene extends Scene {
         });
     }
 
-    // drawWinLine() - UNCHANGED
     drawWinLine(positions) {
         this.winLine.clear();
         this.winLine.lineStyle(16, 0xf5f3ef, 1.0);
@@ -414,10 +413,11 @@ export class MultiplayerScene extends Scene {
                 winner === 0
                     ? "Game Over: Draw!"
                     : winner === 1
-                    ? `${this.hostName} Wins!`
-                    : `${this.guestName} Wins!`
+                    ? `${this.hostName} wins!`
+                    : `${this.guestName} wins!`
             )
             .setDepth(60)
+            .setOrigin(0.5)
             .setX(globals.centerX)
             .setY(globals.centerY - 450)
             .setStyle(globals.overlayTextStyle);
@@ -433,10 +433,6 @@ export class MultiplayerScene extends Scene {
             .setDepth(60)
             .setVisible(false);
 
-        console.log(
-            `Game over! ${winner === 0 ? "Draw" : "Player " + winner + " won"}`
-        );
-
         this.tweens.add({
             targets: overlay,
             alpha: 1,
@@ -446,8 +442,6 @@ export class MultiplayerScene extends Scene {
                 this.turnText.setVisible(true);
                 this.restartText.setVisible(true);
                 overlay.on("pointerdown", () => {
-                    console.log("Game restarting...");
-
                     if (this.isHost) {
                         this.gameCore.reset();
                         const resetState = this.gameCore.getState();

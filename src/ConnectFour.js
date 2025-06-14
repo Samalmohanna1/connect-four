@@ -11,10 +11,10 @@ export class ConnectFour {
 
     getState() {
         return {
-            board: this.board.map((col) => [...col]), // Deep clone to prevent reference issues
+            board: this.board.map((col) => [...col]),
             currentPlayer: this.currentPlayer,
             gameEnded: this.gameEnded,
-            winPositions: [...this.winPositions], // Deep clone positions
+            winPositions: [...this.winPositions],
             isAnimating: this.isAnimating,
         };
     }
@@ -22,7 +22,7 @@ export class ConnectFour {
     setState(state) {
         if (!state) return;
 
-        this.board = state.board.map((col) => [...col]); // Deep clone incoming state
+        this.board = state.board.map((col) => [...col]);
         this.currentPlayer = state.currentPlayer;
         this.gameEnded = state.gameEnded;
         this.winPositions = state.winPositions ? [...state.winPositions] : [];
@@ -64,32 +64,26 @@ export class ConnectFour {
             if (this.board[col][row] === 0) {
                 this.isAnimating = true;
 
-                // Place the coin
                 this.board[col][row] = this.currentPlayer;
-                console.log(
-                    `ConnectFour: Placed Player ${this.currentPlayer}'s coin at column ${col}, row ${row}`
-                );
+                // console.log(
+                //     `ConnectFour: Placed Player ${this.currentPlayer}'s coin at column ${col}, row ${row}`
+                // );
 
-                // Store the move details
                 const move = { col, row, player: this.currentPlayer };
 
-                // Check for win condition
                 if (this.checkWin(col, row)) {
-                    console.log(
-                        `ConnectFour: Player ${this.currentPlayer} wins!`
-                    );
+                    // console.log(
+                    //     `ConnectFour: Player ${this.currentPlayer} wins!`
+                    // );
                     this.endGame(this.currentPlayer);
                     return move;
                 }
 
-                // Check for draw condition
                 if (this.checkDraw()) {
-                    console.log("ConnectFour: Game is a draw!");
-                    this.endGame(0); // 0 represents a draw
+                    // console.log("ConnectFour: Game is a draw!");
+                    this.endGame(0);
                     return move;
                 }
-
-                // Switch to next player (only if game hasn't ended)
                 if (!this.gameEnded) {
                     this.switchPlayer();
                 }
@@ -98,14 +92,11 @@ export class ConnectFour {
             }
         }
 
-        console.log(`ConnectFour: Column ${col} is full, move rejected`);
+        // console.log(`ConnectFour: Column ${col} is full, move rejected`);
         return null;
     }
 
     finishAnimation() {
-        console.log(
-            `ConnectFour: Finishing animation, setting isAnimating from ${this.isAnimating} to false`
-        );
         this.isAnimating = false;
     }
 
@@ -119,9 +110,6 @@ export class ConnectFour {
     switchPlayer() {
         const oldPlayer = this.currentPlayer;
         this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
-        console.log(
-            `ConnectFour: Switched player from ${oldPlayer} to ${this.currentPlayer}`
-        );
     }
 
     checkWin(col, row) {
@@ -137,7 +125,6 @@ export class ConnectFour {
             let count = 1;
             let positions = [{ col, row }];
 
-            // Check in positive direction
             for (let i = 1; i < 4; i++) {
                 const checkCol = col + i * dx;
                 const checkRow = row + i * dy;
@@ -149,7 +136,6 @@ export class ConnectFour {
                 } else break;
             }
 
-            // Check in negative direction
             for (let i = 1; i < 4; i++) {
                 const checkCol = col - i * dx;
                 const checkRow = row - i * dy;
@@ -179,11 +165,6 @@ export class ConnectFour {
     }
 
     endGame(winner) {
-        console.log(
-            `ConnectFour: Ending game with ${
-                winner === 0 ? "draw" : "Player " + winner + " winning"
-            }`
-        );
         this.gameEnded = true;
         return winner;
     }
@@ -194,6 +175,5 @@ export class ConnectFour {
         this.gameEnded = false;
         this.winPositions = [];
         this.isAnimating = false;
-        console.log("ConnectFour: Game has been reset");
     }
 }

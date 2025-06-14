@@ -31,4 +31,14 @@ export default {
         fontSize: 64,
         color: colors.white500,
     },
+    turnTextStyle: {
+        fontFamily: "OpenSans",
+        fontStyle: "800",
+        fontSize: 34,
+        color: colors.white500,
+        padding: {
+            x: 30,
+            y: 30,
+        },
+    },
 };
