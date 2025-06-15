@@ -242,6 +242,17 @@ export class MultiplayerScene extends Scene {
             setState("game", { ...gameState, moveRequest: col });
         }
     }
+
+    playCoinDrop() {
+        const coinDropSound = this.sound.get("coinDrop");
+        if (!coinDropSound || !coinDropSound.isPlaying) {
+            this.sound.play("coinDrop", {
+                volume: 0.7,
+                rate: 1.1,
+            });
+        }
+    }
+
     processPlayerMove(col) {
         const move = this.gameCore.dropCoin(col);
         if (!move) {
@@ -272,6 +283,7 @@ export class MultiplayerScene extends Scene {
         this.input.enabled = false;
         this.dropZones.forEach((zone) => zone.disableInteractive());
 
+        this.playCoinDrop();
         this.tweens.add({
             targets: coin,
             y: targetY,
@@ -299,6 +311,7 @@ export class MultiplayerScene extends Scene {
                     this.input.enabled = true;
                     this.showPreviewCoin(this.input.activePointer);
                 }
+                this.sound.stopByKey("coinDrop");
             },
         });
     }

@@ -55,6 +55,8 @@ export class Preloader extends Scene {
             frameWidth: 262,
             frameHeight: 291,
         });
+
+        this.load.audio("coinDrop", "audio/CoinDrop-c4.mp3");
     }
 
     create() {
