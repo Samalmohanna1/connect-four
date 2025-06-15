@@ -154,28 +154,11 @@ export class GameScene extends Scene {
         this.animateCoinDrop(col);
     }
 
-    processPlayerMove(col) {
-        const move = this.gameCore.dropCoin(col);
-        if (!move) {
-            console.log(`Invalid move in column ${col}`);
-            return;
-        }
-
-        const win = this.gameCore.checkWin(move.col, move.row);
-        const draw = this.gameCore.checkDraw();
-
-        if (win || draw) {
-            this.gameCore.endGame(win ? this.gameCore.currentPlayer : 0);
-        } else {
-            const currentPlayer = this.gameCore.currentPlayer;
-        }
-
-        this.updateBoard();
-        this.updateTurnText();
-
-        if (this.gameCore.gameEnded) {
-            this.handleGameOver(this.gameCore.currentPlayer);
-        }
+    playCoinDrop() {
+        this.sound.play("coinDrop", {
+            volume: 0.7,
+            rate: 1.1,
+        });
     }
 
     animateCoinDrop(col) {
@@ -189,6 +172,7 @@ export class GameScene extends Scene {
 
         const targetY = this.boardTopY + row * this.slotSize;
 
+        this.playCoinDrop();
         this.tweens.add({
             targets: this.previewCoin,
             y: targetY,
