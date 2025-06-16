@@ -110,6 +110,21 @@ export class GameScene extends Scene {
                 backgroundColor: bgColor,
             }
         );
+
+        this.add
+            .image(1700, 1000, "backBtn")
+            .setInteractive({ useHandCursor: true })
+            .setOrigin(0.5)
+            .setScale(0.6)
+            .on("pointerdown", () => {
+                this.time.delayedCall(10, () => {
+                    this.cameras.main.fadeOut(1000);
+                    this.cameras.main.once("camerafadeoutcomplete", () => {
+                        this.scene.restart();
+                        this.scene.start("MainMenu");
+                    });
+                });
+            });
     }
 
     setupInteraction() {

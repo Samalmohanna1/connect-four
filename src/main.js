@@ -6,6 +6,7 @@ import { MainMenu } from "./scenes/MainMenu";
 import { HowTo } from "./scenes/HowTo";
 import { GameScene } from "./scenes/GameScene";
 import { MultiplayerScene } from "./scenes/MultiplayerScene";
+import { PlayerDisconnect } from "./scenes/PlayerDisconnect";
 
 const config = {
     type: Phaser.AUTO,
@@ -17,7 +18,15 @@ const config = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [Boot, Preloader, MainMenu, HowTo, GameScene, MultiplayerScene],
+    scene: [
+        Boot,
+        Preloader,
+        MainMenu,
+        HowTo,
+        GameScene,
+        MultiplayerScene,
+        PlayerDisconnect,
+    ],
 };
 
 globals.centerX = config.width / 2;

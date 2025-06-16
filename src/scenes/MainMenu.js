@@ -1,6 +1,6 @@
 import { Scene } from "phaser";
 import globals from "../globals";
-import { insertCoin, onPlayerJoin } from "playroomkit";
+import { insertCoin, onPlayerJoin, setState, isHost } from "playroomkit";
 
 export class MainMenu extends Scene {
     constructor() {
@@ -64,6 +64,10 @@ export class MainMenu extends Scene {
             });
         }
 
+        if (isHost()) {
+            setState("leftGame", false, true);
+        }
+
         this.hostName = "host";
         this.guestName = "guest";
         if (this.hasPlayroomRoomInUrl()) {
@@ -118,6 +122,7 @@ export class MainMenu extends Scene {
 
             const players = [];
             const removeListener = onPlayerJoin((player) => {
+                player.setState("leftGame", false);
                 players.push(player);
 
                 if (players.length === 2) {

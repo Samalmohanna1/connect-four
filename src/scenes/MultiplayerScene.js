@@ -1,12 +1,13 @@
 import { Scene } from "phaser";
 import globals from "../globals";
 import { ConnectFour } from "../ConnectFour";
-import { isHost, setState, getState } from "playroomkit";
+import { isHost, setState, getState, onPlayerJoin } from "playroomkit";
 
 export class MultiplayerScene extends Scene {
     constructor() {
         super("MultiplayerScene");
         this.lastAnimatedMove = null;
+        this.players = [];
     }
 
     init(data) {
@@ -33,6 +34,11 @@ export class MultiplayerScene extends Scene {
                 }
             });
         }
+        onPlayerJoin((player) => {
+            player.onQuit(() => {
+                player.setState("leftGame", true);
+            });
+        });
 
         this.setupBackground();
         this.setupGameBoard();
@@ -46,6 +52,17 @@ export class MultiplayerScene extends Scene {
             callbackScope: this,
             loop: true,
         });
+    }
+
+    update() {
+        if (getState("leftGame")) {
+            this.leaveGame();
+        }
+    }
+
+    leaveGame() {
+        console.log("in leave game");
+        this.scene.start("PlayerDisconnect");
     }
 
     setupGameCore() {
@@ -171,19 +188,15 @@ export class MultiplayerScene extends Scene {
             }
         );
 
-        // this.add
-        //     .image(1800, 1000, "backBtn")
-        //     .setInteractive({ useHandCursor: true })
-        //     .setOrigin(0.5)
-        //     .on("pointerdown", () => {
-        //         this.time.delayedCall(10, () => {
-        //             this.cameras.main.fadeOut(1000);
-        //             this.cameras.main.once("camerafadeoutcomplete", () => {
-        //                 leaveRoom();
-        //                 this.scene.start("MainMenu");
-        //             });
-        //         });
-        //     });
+        this.add
+            .image(1700, 1000, "backBtn")
+            .setInteractive({ useHandCursor: true })
+            .setOrigin(0.5)
+            .setScale(0.6)
+            .on("pointerdown", () => {
+                setState("leftGame", true, true);
+                this.leaveGame();
+            });
     }
 
     setupInteraction() {
