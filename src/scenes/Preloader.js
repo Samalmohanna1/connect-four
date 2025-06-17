@@ -27,31 +27,29 @@ export class Preloader extends Scene {
         this.load.font("OpenSans", "fonts/OpenSans-VariableFont.ttf");
         this.load.setPath("assets");
 
-        this.load.image("title", "title.png");
-        this.load.image("howTo", "howTo.png");
-        this.load.image("gameBg", "gameBg.png");
-        this.load.image("backBtn", "backBtn.png");
-        this.load.image("howToBtn", "howToBtn.png");
-        this.load.image("singlePlayerBtn", "singlePlayerBtn.png");
-        this.load.image("multiPlayerBtn", "multiPlayerBtn.png");
-        this.load.image("playerOneTag", "playerOneTag.png");
-        this.load.image("playerTwoTag", "playerTwoTag.png");
-        this.load.image("boardFrame", "boardFrame.png");
-        this.load.image("sky", "sky.png");
-        this.load.image("hangingPlant", "hanging-plant.png");
-        this.load.spritesheet("howToSprite", "howto-sprite.png", {
+        this.load.image("title", "title.webp");
+        this.load.image("howTo", "howTo.webp");
+        this.load.image("gameBg", "gameBg.webp");
+        this.load.image("backBtn", "backBtn.webp");
+        this.load.image("howToBtn", "howToBtn.webp");
+        this.load.image("singlePlayerBtn", "singlePlayerBtn.webp");
+        this.load.image("multiPlayerBtn", "multiPlayerBtn.webp");
+        this.load.image("boardFrame", "boardFrame.webp");
+        this.load.image("sky", "sky.webp");
+        this.load.image("hangingPlant", "hanging-plant.webp");
+        this.load.spritesheet("howToSprite", "howto-sprite.webp", {
             frameWidth: 381,
             frameHeight: 314,
         });
-        this.load.spritesheet("slot", "slot.png", {
+        this.load.spritesheet("slot", "slot.webp", {
             frameWidth: 117,
             frameHeight: 117,
         });
-        this.load.spritesheet("coin", "coin.png", {
+        this.load.spritesheet("coin", "coin.webp", {
             frameWidth: 95,
             frameHeight: 95,
         });
-        this.load.spritesheet("coffee", "coffee.png", {
+        this.load.spritesheet("coffee", "coffee.webp", {
             frameWidth: 262,
             frameHeight: 291,
         });

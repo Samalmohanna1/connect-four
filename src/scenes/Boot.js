@@ -6,11 +6,10 @@ export class Boot extends Scene {
     }
 
     preload() {
-        this.load.image("studioLogo", "assets/studio-logo.png");
+        this.load.image("studioLogo", "assets/studio-logo.webp");
     }
 
     create() {
         this.scene.start("Preloader");
     }
 }
-
