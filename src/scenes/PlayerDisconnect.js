@@ -17,7 +17,8 @@ export class PlayerDisconnect extends Scene {
             .setOrigin(0.5)
             .setDepth(100);
         this.time.delayedCall(2000, () => {
-            window.history.replaceState({}, document.title, "/");
+            const urlWithoutHash = window.location.href.split("#")[0];
+            window.history.replaceState({}, document.title, urlWithoutHash);
             window.location.reload();
             this.scene.start("MainMenu");
         });

@@ -8,6 +8,7 @@ export class MultiplayerScene extends Scene {
         super("MultiplayerScene");
         this.lastAnimatedMove = null;
         this.players = [];
+        this.fullscreen = false;
     }
 
     init(data) {
@@ -18,53 +19,21 @@ export class MultiplayerScene extends Scene {
 
     create() {
         if (!this.sys.game.device.os.desktop) {
-            let rotateText;
-            if (!this.sys.game.scale.isLandscape) {
-                rotateText = this.add
-                    .text(
-                        this.scale.width / 2,
-                        60,
-                        `Rotate your device and double tap to toggle fullscreen on/off.`,
-                        {
-                            ...globals.bodyTextStyle,
-                            backgroundColor: globals.colors.white500,
-                            padding: { x: 20, y: 20 },
-                        }
-                    )
-                    .setOrigin(0.5)
-                    .setDepth(20);
-            } else if (this.sys.game.scale.isLandscape) {
-                rotateText = this.add
-                    .text(
-                        this.scale.width / 2,
-                        60,
-                        `Double tap to toggle fullscreen on/off.`,
-                        {
-                            ...globals.bodyTextStyle,
-                            backgroundColor: globals.colors.white500,
-                            padding: { x: 20, y: 20 },
-                        }
-                    )
-                    .setOrigin(0.5)
-                    .setDepth(20);
-            }
-
-            let lastTap = 0;
-            this.input.on("pointerup", (pointer) => {
-                let currentTime = pointer.event.timeStamp;
-                let tapLength = currentTime - lastTap;
-                if (tapLength < 300 && tapLength > 0) {
-                    rotateText.setVisible(false);
-                    if (this.scale.isFullscreen) {
-                        this.scale.stopFullscreen();
-                    } else {
+            this.add
+                .image(1700, 930, "fsBtn")
+                .setInteractive({ useHandCursor: true })
+                .setOrigin(0.5)
+                .setScale(0.6)
+                .setDepth(60)
+                .on("pointerdown", () => {
+                    if (!this.fullscreen) {
                         this.scale.startFullscreen();
+                        this.fullscreen = true;
+                    } else {
+                        this.scale.stopFullscreen();
+                        this.fullscreen = false;
                     }
-                    lastTap = 0;
-                } else {
-                    lastTap = currentTime;
-                }
-            });
+                });
         }
         onPlayerJoin((player) => {
             player.onQuit(() => {
@@ -221,7 +190,7 @@ export class MultiplayerScene extends Scene {
         );
 
         this.add
-            .image(1700, 1000, "backBtn")
+            .image(1700, 1020, "backBtn")
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
             .setScale(0.6)
