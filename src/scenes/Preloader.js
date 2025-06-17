@@ -32,6 +32,7 @@ export class Preloader extends Scene {
         this.load.image("gameBg", "gameBg.webp");
         this.load.image("backBtn", "backBtn.webp");
         this.load.image("howToBtn", "howToBtn.webp");
+        this.load.image("fsBtn", "fsBtn.webp");
         this.load.image("singlePlayerBtn", "singlePlayerBtn.webp");
         this.load.image("multiPlayerBtn", "multiPlayerBtn.webp");
         this.load.image("boardFrame", "boardFrame.webp");
