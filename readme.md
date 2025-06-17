@@ -1,6 +1,6 @@
 # Connect Four
 
-![game thumbnail graphic](public/assets/thumbnail.png)
+![game thumbnail graphic](public/assets/thumbnail.webp)
 
 Classic Connect Four, the vertical checkers game.
 
@@ -10,4 +10,4 @@ Classic Connect Four, the vertical checkers game.
 2. Click a column to drop your checker. It falls to the lowest empty spot.
 3. If the board fills up with no winner, it’s a tie.
 
-![studio logo](public/assets/studio-logo.png)
+![studio logo](public/assets/studio-logo.webp)
