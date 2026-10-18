@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
 import globals from "../globals";
+import { fadeToScene } from "../fadeToScene";
 
 export class Preloader extends Scene {
     constructor() {
@@ -77,11 +78,6 @@ export class Preloader extends Scene {
             repeat: -1,
         });
 
-        this.time.delayedCall(1000, () => {
-            this.cameras.main.fadeOut(1000);
-            this.cameras.main.once("camerafadeoutcomplete", () => {
-                this.scene.start("MainMenu");
-            });
-        });
+        fadeToScene(this, "MainMenu", 1000);
     }
 }

@@ -1,5 +1,5 @@
 import globals from "./globals";
-import { Game } from "phaser";
+import { Game, AUTO, Scale } from "phaser";
 import { Boot } from "./scenes/Boot";
 import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
@@ -9,14 +9,14 @@ import { MultiplayerScene } from "./scenes/MultiplayerScene";
 import { PlayerDisconnect } from "./scenes/PlayerDisconnect";
 
 const config = {
-    type: Phaser.AUTO,
+    type: AUTO,
     width: 1920,
     height: 1080,
     parent: "game-container",
     backgroundColor: globals.colors.black600,
     scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        mode: Scale.FIT,
+        autoCenter: Scale.CENTER_BOTH,
     },
     scene: [
         Boot,

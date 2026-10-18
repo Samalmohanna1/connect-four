@@ -1,4 +1,5 @@
 import { BoardScene } from "./BoardScene";
+import { fadeToScene } from "../fadeToScene";
 
 // Two players taking turns on one device.
 export class GameScene extends BoardScene {
@@ -15,12 +16,7 @@ export class GameScene extends BoardScene {
     }
 
     onBack() {
-        this.time.delayedCall(10, () => {
-            this.cameras.main.fadeOut(1000);
-            this.cameras.main.once("camerafadeoutcomplete", () => {
-                this.scene.start("MainMenu");
-            });
-        });
+        fadeToScene(this, "MainMenu");
     }
 
     onPlayAgain() {

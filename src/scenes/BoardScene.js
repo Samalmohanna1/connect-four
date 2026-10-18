@@ -1,4 +1,4 @@
-import { Scene } from "phaser";
+import { Scene, Math as PhaserMath } from "phaser";
 import globals from "../globals";
 import { ConnectFour } from "../ConnectFour";
 
@@ -146,7 +146,7 @@ export class BoardScene extends Scene {
         }
 
         const boardRight = this.boardLeft + COLS * SLOT_SIZE;
-        const x = Phaser.Math.Clamp(
+        const x = PhaserMath.Clamp(
             pointer.x,
             this.boardLeft + COIN_SIZE / 2,
             boardRight - COIN_SIZE / 2

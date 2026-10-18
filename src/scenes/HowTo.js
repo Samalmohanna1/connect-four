@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
 import globals from "../globals";
+import { fadeToScene } from "../fadeToScene";
 
 export class HowTo extends Scene {
     constructor() {
@@ -36,13 +37,6 @@ export class HowTo extends Scene {
             .image(globals.centerX - 430, globals.centerY + 280, "backBtn")
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
-            .on("pointerdown", () => {
-                this.time.delayedCall(10, () => {
-                    this.cameras.main.fadeOut(1000);
-                    this.cameras.main.once("camerafadeoutcomplete", () => {
-                        this.scene.start("MainMenu");
-                    });
-                });
-            });
+            .on("pointerdown", () => fadeToScene(this, "MainMenu"));
     }
 }
