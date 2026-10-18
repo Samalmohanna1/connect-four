@@ -105,7 +105,6 @@ export class ConnectFour {
     }
 
     switchPlayer() {
-        const oldPlayer = this.currentPlayer;
         this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
     }
 
