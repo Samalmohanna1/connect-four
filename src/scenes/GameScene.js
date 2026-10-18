@@ -203,7 +203,7 @@ export class GameScene extends Scene {
                 this.updateTurnText();
 
                 if (this.gameCore.gameEnded) {
-                    this.handleGameOver(player);
+                    this.handleGameOver(this.gameCore.winner);
                 } else {
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
