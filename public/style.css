@@ -1,10 +1,4 @@
-@font-face {
-    font-family: 'OpenSans';
-    src: url('/fonts/OpenSans-VariableFont.ttf') format('truetype');
-    font-weight: 300 800;
-}
-
-
+/* The OpenSans font face is registered by the Preloader scene. */
 body {
     margin: 0;
     padding: 0;

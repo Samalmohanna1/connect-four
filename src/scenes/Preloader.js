@@ -25,7 +25,10 @@ export class Preloader extends Scene {
     }
 
     preload() {
-        this.load.font("OpenSans", "fonts/OpenSans-VariableFont.ttf");
+        // A Latin subset of the Open Sans variable font, covering weights 300-800.
+        this.load.font("OpenSans", "fonts/OpenSans.woff2", "woff2", {
+            weight: "300 800",
+        });
         this.load.setPath("assets");
 
         this.load.image("title", "title.webp");
