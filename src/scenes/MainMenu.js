@@ -25,8 +25,6 @@ export class MainMenu extends Scene {
             setState("leftGame", false, true);
         }
 
-        this.hostName = "host";
-        this.guestName = "guest";
         if (this.hasPlayroomRoomInUrl()) {
             this.launchMultiplayer();
         }

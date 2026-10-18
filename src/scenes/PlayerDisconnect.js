@@ -20,7 +20,6 @@ export class PlayerDisconnect extends Scene {
             const urlWithoutHash = window.location.href.split("#")[0];
             window.history.replaceState({}, document.title, urlWithoutHash);
             window.location.reload();
-            this.scene.start("MainMenu");
         });
     }
 }
