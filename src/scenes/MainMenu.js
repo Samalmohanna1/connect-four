@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
 import globals from "../globals";
+import { fadeToScene } from "../fadeToScene";
 import {
     insertCoin,
     onPlayerJoin,
@@ -38,14 +39,7 @@ export class MainMenu extends Scene {
             )
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
-            .on("pointerdown", () => {
-                this.time.delayedCall(10, () => {
-                    this.cameras.main.fadeOut(1000);
-                    this.cameras.main.once("camerafadeoutcomplete", () => {
-                        this.scene.start("GameScene");
-                    });
-                });
-            });
+            .on("pointerdown", () => fadeToScene(this, "GameScene"));
         this.add
             .image(
                 globals.centerX - 210,
@@ -62,14 +56,7 @@ export class MainMenu extends Scene {
             .image(globals.centerX - 410, globals.centerY + 250, "howToBtn")
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
-            .on("pointerdown", () => {
-                this.time.delayedCall(10, () => {
-                    this.cameras.main.fadeOut(1000);
-                    this.cameras.main.once("camerafadeoutcomplete", () => {
-                        this.scene.start("HowTo");
-                    });
-                });
-            });
+            .on("pointerdown", () => fadeToScene(this, "HowTo"));
     }
     async launchMultiplayer() {
         if (this.joiningMultiplayer) return;
