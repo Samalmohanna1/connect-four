@@ -1,23 +1,32 @@
 import { Scene } from "phaser";
 import globals from "../globals";
 import { ConnectFour } from "../ConnectFour";
-import { isHost, setState, getState, onPlayerJoin } from "playroomkit";
+import { isHost, setState, getState, onPlayerJoin, RPC } from "playroomkit";
 
+// Only the host writes the shared "game" state. The guest sends its moves and
+// rematch requests to the host over RPC, and both clients animate a move when
+// they see moveCount go up.
 export class MultiplayerScene extends Scene {
     constructor() {
         super("MultiplayerScene");
-        this.lastAnimatedMove = null;
-        this.players = [];
         this.fullscreen = false;
     }
 
     init(data) {
         this.isHost = isHost();
+        this.myPlayerNumber = this.isHost ? 1 : 2;
         this.hostName = data.hostName;
         this.guestName = data.guestName;
     }
 
     create() {
+        // The scene instance is reused on restart, so reset per-game fields here.
+        this.round = null;
+        this.shownMoveCount = 0;
+        this.isDropping = false;
+        this.isGameOver = false;
+        this.hasLeft = false;
+
         if (!this.sys.game.device.os.desktop) {
             this.add
                 .image(1700, 930, "fsBtn")
@@ -35,17 +44,12 @@ export class MultiplayerScene extends Scene {
                     }
                 });
         }
-        onPlayerJoin((player) => {
-            player.onQuit(() => {
-                player.setState("leftGame", true);
-            });
-        });
-
         this.setupBackground();
         this.setupGameBoard();
         this.setupUI();
         this.setupInteraction();
         this.setupGameCore();
+        this.setupNetworking();
 
         this.time.addEvent({
             delay: 100,
@@ -62,7 +66,8 @@ export class MultiplayerScene extends Scene {
     }
 
     leaveGame() {
-        console.log("in leave game");
+        if (this.hasLeft) return;
+        this.hasLeft = true;
         this.scene.start("PlayerDisconnect");
     }
 
@@ -70,59 +75,73 @@ export class MultiplayerScene extends Scene {
         this.gameCore = new ConnectFour();
 
         if (this.isHost) {
-            const initialState = this.gameCore.getState();
-            initialState.lastMove = null;
-            initialState.moveRequest = null;
-
-            setState("game", initialState, true);
-        } else {
-            const state = getState("game");
-            if (state) {
-                this.gameCore.setState(state);
-            }
+            // Each new game is a new round, so the guest knows to restart too.
+            this.round = (getState("game")?.round ?? 0) + 1;
+            this.publishState();
         }
+    }
+
+    setupNetworking() {
+        const cleanups = [];
+
+        // onPlayerJoin also fires for players already in the room, so the quit
+        // listeners are attached again after every rematch restart.
+        cleanups.push(
+            onPlayerJoin((player) => {
+                cleanups.push(player.onQuit(() => this.leaveGame()));
+            })
+        );
+
+        if (this.isHost) {
+            cleanups.push(
+                RPC.register("move", async (col) => {
+                    this.applyMove(col, 2);
+                }),
+                RPC.register("rematch", async () => {
+                    this.startRematch();
+                })
+            );
+        }
+
+        this.events.once("shutdown", () => {
+            cleanups.forEach((cleanup) => cleanup());
+        });
+    }
+
+    publishState() {
+        setState("game", { ...this.gameCore.getState(), round: this.round });
     }
 
     syncFromState() {
         const state = getState("game");
         if (!state) return;
 
-        if (
-            this.isHost &&
-            state.moveRequest !== null &&
-            state.moveRequest !== undefined
-        ) {
-            const moveRequest = state.moveRequest;
-            setState("game", { ...state, moveRequest: null });
+        if (!this.isHost) {
+            if (this.round === null) this.round = state.round;
 
-            this.processPlayerMove(moveRequest);
-            return;
+            // The host started a rematch.
+            if (state.round !== this.round) {
+                this.scene.restart();
+                return;
+            }
         }
+
+        if (this.isDropping || this.isGameOver) return;
 
         this.gameCore.setState(state);
 
-        if (state.lastMove && this.shouldAnimateMove(state.lastMove)) {
-            this.animateCoinDrop(
-                state.lastMove.col,
-                state.lastMove.row,
-                state.lastMove.player
-            );
-            this.lastAnimatedMove = { ...state.lastMove };
-        }
+        if (state.moveCount > this.shownMoveCount) {
+            this.shownMoveCount = state.moveCount;
+            const { col, row } = state.lastMove;
 
-        if (!this.gameCore.isAnimating && !this.gameCore.gameEnded) {
+            // Show every coin except the one about to fall into place.
+            this.updateBoard();
+            this.slots[col][row].setFrame(0);
+            this.animateCoinDrop(state.lastMove);
+        } else {
             this.updateBoard();
             this.updateTurnText();
         }
-    }
-
-    shouldAnimateMove(move) {
-        return (
-            !this.lastAnimatedMove ||
-            move.col !== this.lastAnimatedMove.col ||
-            move.row !== this.lastAnimatedMove.row ||
-            move.player !== this.lastAnimatedMove.player
-        );
     }
 
     setupBackground() {
@@ -216,9 +235,7 @@ export class MultiplayerScene extends Scene {
             zone.column = col;
             zone.on("pointerdown", (pointer) => {
                 this.showPreviewCoin(pointer);
-                if (!this.gameCore.isAnimating) {
-                    this.onColumnClick(col);
-                }
+                this.onColumnClick(col);
             });
             this.dropZones.push(zone);
         }
@@ -236,24 +253,42 @@ export class MultiplayerScene extends Scene {
         });
     }
 
+    isMyTurn() {
+        return (
+            !this.gameCore.gameEnded &&
+            !this.isDropping &&
+            this.gameCore.currentPlayer === this.myPlayerNumber
+        );
+    }
+
     onColumnClick(col) {
-        if (this.gameCore.gameEnded) return;
-
-        const gameState = getState("game");
-        if (!gameState) return;
-
-        const isMyTurn =
-            (this.isHost && gameState.currentPlayer === 1) ||
-            (!this.isHost && gameState.currentPlayer === 2);
-
-        if (!isMyTurn) {
-            return;
-        }
+        if (!this.isMyTurn()) return;
 
         if (this.isHost) {
-            this.processPlayerMove(col);
+            this.applyMove(col, this.myPlayerNumber);
         } else {
-            setState("game", { ...gameState, moveRequest: col });
+            RPC.call("move", col, RPC.Mode.HOST);
+        }
+    }
+
+    // Host only.
+    applyMove(col, player) {
+        if (player !== this.gameCore.currentPlayer) return;
+        if (!this.gameCore.dropCoin(col)) return;
+        this.publishState();
+    }
+
+    // Host only. Restarting publishes a new round, which restarts the guest.
+    startRematch() {
+        if (!this.gameCore.gameEnded) return;
+        this.scene.restart();
+    }
+
+    requestRematch() {
+        if (this.isHost) {
+            this.startRematch();
+        } else {
+            RPC.call("rematch", null, RPC.Mode.HOST);
         }
     }
 
@@ -267,24 +302,7 @@ export class MultiplayerScene extends Scene {
         }
     }
 
-    processPlayerMove(col) {
-        const move = this.gameCore.dropCoin(col);
-        if (!move) {
-            console.log(`Invalid move in column ${col}`);
-            return;
-        }
-
-        if (this.isHost) {
-            const currentState = this.gameCore.getState();
-            setState("game", {
-                ...currentState,
-                lastMove: move,
-                moveRequest: null,
-            });
-        }
-    }
-
-    animateCoinDrop(col, row, player) {
+    animateCoinDrop({ col, row, player }) {
         const targetY = this.boardTopY + row * this.slotSize;
         const targetX =
             this.boardLeft + col * this.slotSize + this.slotSize / 2;
@@ -294,6 +312,8 @@ export class MultiplayerScene extends Scene {
             .setDepth(1)
             .setVisible(true);
 
+        this.isDropping = true;
+        this.previewCoin.setVisible(false);
         this.input.enabled = false;
         this.dropZones.forEach((zone) => zone.disableInteractive());
 
@@ -306,26 +326,23 @@ export class MultiplayerScene extends Scene {
             onComplete: () => {
                 this.slots[col][row].setFrame(player);
                 coin.destroy();
+                this.isDropping = false;
+                this.sound.stopByKey("coinDrop");
 
-                this.updateBoard();
-                this.updateTurnText();
+                // On the host, gameCore may already hold a newer move that
+                // arrived mid-drop; that move is animated on the next sync.
+                const isFinalMove =
+                    this.gameCore.gameEnded &&
+                    this.gameCore.moveCount === this.shownMoveCount;
 
-                this.gameCore.finishAnimation();
-
-                if (this.isHost) {
-                    const currentState = this.gameCore.getState();
-                    setState("game", currentState);
-                }
-
-                const state = getState("game");
-                if (state.gameEnded) {
-                    this.handleGameOver(state.winner);
+                if (isFinalMove) {
+                    this.handleGameOver(this.gameCore.winner);
                 } else {
+                    this.updateTurnText();
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
                     this.showPreviewCoin(this.input.activePointer);
                 }
-                this.sound.stopByKey("coinDrop");
             },
         });
     }
@@ -340,17 +357,10 @@ export class MultiplayerScene extends Scene {
         const col = Math.floor((x - this.boardLeft) / this.slotSize);
         const snapX = this.boardLeft + col * this.slotSize + this.slotSize / 2;
 
-        const gameState = getState("game");
-        if (!gameState) return;
-
-        const isMyTurn =
-            (this.isHost && gameState.currentPlayer === 1) ||
-            (!this.isHost && gameState.currentPlayer === 2);
-        if (isMyTurn) {
-            let coinFrame = gameState.currentPlayer - 1;
+        if (this.isMyTurn()) {
             this.previewCoin
                 .setPosition(snapX, 120)
-                .setFrame(coinFrame)
+                .setFrame(this.myPlayerNumber - 1)
                 .setVisible(true);
         } else {
             this.previewCoin.setVisible(false);
@@ -358,21 +368,11 @@ export class MultiplayerScene extends Scene {
     }
 
     updateTurnText() {
-        const gameState = getState("game");
-        if (!gameState) return;
-
-        let playerName;
-        let bgColor;
-        if (gameState.currentPlayer === 1) {
-            playerName = this.hostName;
-            bgColor = globals.colors.red600;
-        } else if (gameState.currentPlayer === 2) {
-            playerName = this.guestName;
-            bgColor = globals.colors.black500;
-        } else {
-            playerName = "Unknown";
-            bgColor = globals.colors.black500;
-        }
+        const isHostTurn = this.gameCore.currentPlayer === 1;
+        const playerName = isHostTurn ? this.hostName : this.guestName;
+        const bgColor = isHostTurn
+            ? globals.colors.red600
+            : globals.colors.black500;
 
         this.turnText.setText(`${playerName}'s turn`);
         this.turnText.setStyle({ backgroundColor: bgColor });
@@ -410,6 +410,7 @@ export class MultiplayerScene extends Scene {
     }
 
     handleGameOver(winner) {
+        this.isGameOver = true;
         this.previewCoin.setVisible(false);
         this.dropZones.forEach((zone) => zone.disableInteractive());
         this.columnHighlight.setVisible(false);
@@ -468,19 +469,7 @@ export class MultiplayerScene extends Scene {
             onComplete: () => {
                 this.turnText.setVisible(true);
                 this.restartText.setVisible(true);
-                overlay.on("pointerdown", () => {
-                    if (this.isHost) {
-                        this.gameCore.reset();
-                        const resetState = this.gameCore.getState();
-                        resetState.lastMove = null;
-                        resetState.moveRequest = null;
-                        setState("game", resetState);
-                    }
-
-                    overlay.destroy();
-                    this.restartText.destroy();
-                    this.scene.restart();
-                });
+                overlay.on("pointerdown", () => this.requestRematch());
             },
         });
     }

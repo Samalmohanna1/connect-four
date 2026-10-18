@@ -1,13 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ConnectFour } from "./ConnectFour";
 
-// Drops coins in the given columns, finishing each animation like the scenes do.
+// Drops coins in the given columns and returns the last move.
 function play(game, cols) {
     let move = null;
     for (const col of cols) {
         move = game.dropCoin(col);
         if (!move) throw new Error(`Move in column ${col} was rejected`);
-        game.finishAnimation();
     }
     return move;
 }
@@ -34,22 +33,31 @@ describe("ConnectFour", () => {
             expect(game.currentPlayer).toBe(1);
         });
 
-        it("rejects a move while the previous coin is animating", () => {
-            game.dropCoin(0);
-            expect(game.dropCoin(1)).toBeNull();
-            game.finishAnimation();
-            expect(game.dropCoin(1)).not.toBeNull();
+        it("counts moves and remembers the last one", () => {
+            expect(game.moveCount).toBe(0);
+            expect(game.lastMove).toBeNull();
+            play(game, [3, 4]);
+            expect(game.moveCount).toBe(2);
+            expect(game.lastMove).toEqual({ col: 4, row: 5, player: 2 });
         });
 
         it("rejects a full column without switching players", () => {
             play(game, [0, 0, 0, 0, 0, 0]);
             expect(game.dropCoin(0)).toBeNull();
             expect(game.currentPlayer).toBe(1);
+            expect(game.moveCount).toBe(6);
         });
 
         it("rejects out-of-bounds columns", () => {
             expect(game.dropCoin(-1)).toBeNull();
             expect(game.dropCoin(7)).toBeNull();
+        });
+
+        it("rejects columns that are not whole numbers", () => {
+            expect(game.dropCoin(2.5)).toBeNull();
+            expect(game.dropCoin("3")).toBeNull();
+            expect(game.dropCoin(null)).toBeNull();
+            expect(game.moveCount).toBe(0);
         });
 
         it("rejects moves after the game has ended", () => {
@@ -151,9 +159,12 @@ describe("ConnectFour", () => {
         });
 
         it("returns copies, so changing the state does not change the game", () => {
+            play(game, [0]);
             const state = game.getState();
-            state.board[0][5] = 2;
-            expect(game.board[0][5]).toBe(0);
+            state.board[1][5] = 2;
+            state.lastMove.col = 6;
+            expect(game.board[1][5]).toBe(0);
+            expect(game.lastMove.col).toBe(0);
         });
 
         it("reset clears the board and the result", () => {
