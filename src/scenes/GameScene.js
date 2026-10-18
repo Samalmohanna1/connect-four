@@ -10,6 +10,8 @@ export class GameScene extends Scene {
     }
 
     create() {
+        this.isDropping = false;
+
         if (!this.sys.game.device.os.desktop) {
             this.add
                 .image(1700, 930, "fsBtn")
@@ -144,7 +146,7 @@ export class GameScene extends Scene {
             zone.column = col;
             zone.on("pointerdown", (pointer) => {
                 this.showPreviewCoin(pointer);
-                if (!this.gameCore.isAnimating) {
+                if (!this.isDropping) {
                     this.onColumnClick(col);
                 }
             });
@@ -183,6 +185,7 @@ export class GameScene extends Scene {
 
         const { col: colIndex, row, player } = dropResult;
 
+        this.isDropping = true;
         this.input.enabled = false;
         this.dropZones.forEach((zone) => zone.disableInteractive());
 
@@ -207,7 +210,7 @@ export class GameScene extends Scene {
                 } else {
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
-                    this.gameCore.finishAnimation();
+                    this.isDropping = false;
                     this.showPreviewCoin(this.input.activePointer);
                 }
             },

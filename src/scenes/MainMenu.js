@@ -1,6 +1,12 @@
 import { Scene } from "phaser";
 import globals from "../globals";
-import { insertCoin, onPlayerJoin, setState, isHost } from "playroomkit";
+import {
+    insertCoin,
+    onPlayerJoin,
+    setState,
+    isHost,
+    myPlayer,
+} from "playroomkit";
 
 export class MainMenu extends Scene {
     constructor() {
@@ -13,6 +19,7 @@ export class MainMenu extends Scene {
 
     create() {
         this.cameras.main.fadeIn(1000);
+        this.joiningMultiplayer = false;
 
         if (isHost()) {
             setState("leftGame", false, true);
@@ -67,18 +74,24 @@ export class MainMenu extends Scene {
             });
     }
     async launchMultiplayer() {
+        if (this.joiningMultiplayer) return;
+        this.joiningMultiplayer = true;
+
         try {
             await insertCoin({ maxPlayersPerRoom: 2 });
 
             const players = [];
             const removeListener = onPlayerJoin((player) => {
-                player.setState("leftGame", false);
                 players.push(player);
 
                 if (players.length === 2) {
-                    const hostPlayer =
-                        players.find((p) => p.isHost) || players[1];
-                    const guestPlayer = players.find((p) => p !== hostPlayer);
+                    // PlayerState has no isHost flag, so work out the roles
+                    // from this client's point of view.
+                    const me = myPlayer();
+                    const opponent = players.find((p) => p.id !== me.id);
+                    const [hostPlayer, guestPlayer] = isHost()
+                        ? [me, opponent]
+                        : [opponent, me];
 
                     const hostName = hostPlayer.getProfile().name || "Host";
                     const guestName = guestPlayer.getProfile().name || "Guest";
@@ -92,6 +105,7 @@ export class MainMenu extends Scene {
             });
         } catch (error) {
             console.error("Playroom init failed:", error);
+            this.joiningMultiplayer = false;
         }
     }
 }

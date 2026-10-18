@@ -7,7 +7,8 @@ export class ConnectFour {
         this.gameEnded = false;
         this.winner = null; // null while playing, 0 for a draw, 1 or 2 for the winner
         this.winPositions = [];
-        this.isAnimating = false;
+        this.moveCount = 0;
+        this.lastMove = null;
     }
 
     getState() {
@@ -17,7 +18,8 @@ export class ConnectFour {
             gameEnded: this.gameEnded,
             winner: this.winner,
             winPositions: [...this.winPositions],
-            isAnimating: this.isAnimating,
+            moveCount: this.moveCount,
+            lastMove: this.lastMove ? { ...this.lastMove } : null,
         };
     }
 
@@ -29,7 +31,8 @@ export class ConnectFour {
         this.gameEnded = state.gameEnded;
         this.winner = state.winner ?? null;
         this.winPositions = state.winPositions ? [...state.winPositions] : [];
-        this.isAnimating = state.isAnimating || false;
+        this.moveCount = state.moveCount || 0;
+        this.lastMove = state.lastMove ? { ...state.lastMove } : null;
     }
 
     createEmptyBoard() {
@@ -49,12 +52,7 @@ export class ConnectFour {
             return null;
         }
 
-        if (this.isAnimating) {
-            console.log("ConnectFour: Move rejected - animation in progress");
-            return null;
-        }
-
-        if (col < 0 || col >= this.cols) {
+        if (!Number.isInteger(col) || col < 0 || col >= this.cols) {
             console.error(
                 `ConnectFour: Invalid column ${col} - out of bounds [0-${
                     this.cols - 1
@@ -65,14 +63,14 @@ export class ConnectFour {
 
         for (let row = this.rows - 1; row >= 0; row--) {
             if (this.board[col][row] === 0) {
-                this.isAnimating = true;
-
                 this.board[col][row] = this.currentPlayer;
                 // console.log(
                 //     `ConnectFour: Placed Player ${this.currentPlayer}'s coin at column ${col}, row ${row}`
                 // );
 
                 const move = { col, row, player: this.currentPlayer };
+                this.moveCount++;
+                this.lastMove = move;
 
                 if (this.checkWin(col, row)) {
                     // console.log(
@@ -97,10 +95,6 @@ export class ConnectFour {
 
         // console.log(`ConnectFour: Column ${col} is full, move rejected`);
         return null;
-    }
-
-    finishAnimation() {
-        this.isAnimating = false;
     }
 
     getSlotValue(col, row) {
@@ -179,6 +173,7 @@ export class ConnectFour {
         this.gameEnded = false;
         this.winner = null;
         this.winPositions = [];
-        this.isAnimating = false;
+        this.moveCount = 0;
+        this.lastMove = null;
     }
 }
