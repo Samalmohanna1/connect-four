@@ -5,6 +5,7 @@ export class ConnectFour {
         this.board = this.createEmptyBoard();
         this.currentPlayer = 1;
         this.gameEnded = false;
+        this.winner = null; // null while playing, 0 for a draw, 1 or 2 for the winner
         this.winPositions = [];
         this.isAnimating = false;
     }
@@ -14,6 +15,7 @@ export class ConnectFour {
             board: this.board.map((col) => [...col]),
             currentPlayer: this.currentPlayer,
             gameEnded: this.gameEnded,
+            winner: this.winner,
             winPositions: [...this.winPositions],
             isAnimating: this.isAnimating,
         };
@@ -25,6 +27,7 @@ export class ConnectFour {
         this.board = state.board.map((col) => [...col]);
         this.currentPlayer = state.currentPlayer;
         this.gameEnded = state.gameEnded;
+        this.winner = state.winner ?? null;
         this.winPositions = state.winPositions ? [...state.winPositions] : [];
         this.isAnimating = state.isAnimating || false;
     }
@@ -166,6 +169,7 @@ export class ConnectFour {
 
     endGame(winner) {
         this.gameEnded = true;
+        this.winner = winner;
         return winner;
     }
 
@@ -173,6 +177,7 @@ export class ConnectFour {
         this.board = this.createEmptyBoard();
         this.currentPlayer = 1;
         this.gameEnded = false;
+        this.winner = null;
         this.winPositions = [];
         this.isAnimating = false;
     }

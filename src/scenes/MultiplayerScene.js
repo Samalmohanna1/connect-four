@@ -319,7 +319,7 @@ export class MultiplayerScene extends Scene {
 
                 const state = getState("game");
                 if (state.gameEnded) {
-                    this.handleGameOver(state.currentPlayer);
+                    this.handleGameOver(state.winner);
                 } else {
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
