@@ -17,12 +17,20 @@ export class BoardScene extends Scene {
         this.gameCore = new ConnectFour(COLS, ROWS);
         this.isDropping = false;
         this.isGameOver = false;
+        this.canPlayAgain = false;
         // How many moves the board has finished showing.
         this.shownMoveCount = 0;
+        // The column the preview coin points at, set by the pointer or keyboard.
+        this.selectedCol = Math.floor(COLS / 2);
+        // Only true once the pointer is used, so a player who hasn't touched
+        // anything yet keeps the center column rather than wherever the
+        // pointer happens to be.
+        this.followsPointer = false;
 
         this.setupBackground();
         this.setupGameBoard();
         this.setupInteraction();
+        this.setupKeyboard();
         this.setupUI();
         this.updateTurnText();
         this.onTurnStart();
@@ -113,7 +121,7 @@ export class BoardScene extends Scene {
                 )
                 .setInteractive({ useHandCursor: true })
                 .on("pointerdown", (pointer) => {
-                    this.showPreviewCoin(pointer);
+                    this.followPointer(pointer);
                     if (this.canMove()) {
                         this.onColumnClick(col);
                     }
@@ -127,8 +135,43 @@ export class BoardScene extends Scene {
             .setDepth(1);
 
         this.input.on("pointermove", (pointer) => {
-            this.showPreviewCoin(pointer);
+            this.followPointer(pointer);
         });
+    }
+
+    // Left and right choose a column; Enter or Space drops a coin there, or
+    // starts the next game once the game-over screen is up.
+    setupKeyboard() {
+        const keyboard = this.input.keyboard;
+
+        keyboard.on("keydown-LEFT", () => this.moveSelection(-1));
+        keyboard.on("keydown-RIGHT", () => this.moveSelection(1));
+
+        for (const key of ["ENTER", "SPACE"]) {
+            keyboard.on(`keydown-${key}`, (event) => {
+                // Holding the key down shouldn't drop a coin into the next game.
+                if (event.repeat) return;
+
+                if (this.canPlayAgain) {
+                    this.onPlayAgain();
+                } else if (this.canMove()) {
+                    this.followsPointer = false;
+                    this.onColumnClick(this.selectedCol);
+                }
+            });
+        }
+    }
+
+    moveSelection(step) {
+        if (!this.canMove()) return;
+
+        this.followsPointer = false;
+        this.selectedCol = PhaserMath.Clamp(
+            this.selectedCol + step,
+            0,
+            COLS - 1
+        );
+        this.showPreviewCoin();
     }
 
     setupUI() {
@@ -152,22 +195,28 @@ export class BoardScene extends Scene {
         }
     }
 
-    showPreviewCoin(pointer) {
-        if (!this.canMove()) {
-            this.previewCoin.setVisible(false);
-            return;
-        }
-
+    // Selects the column under the pointer.
+    followPointer(pointer) {
         const boardRight = this.boardLeft + COLS * SLOT_SIZE;
         const x = PhaserMath.Clamp(
             pointer.x,
             this.boardLeft + COIN_SIZE / 2,
             boardRight - COIN_SIZE / 2
         );
-        const col = Math.floor((x - this.boardLeft) / SLOT_SIZE);
+
+        this.followsPointer = true;
+        this.selectedCol = Math.floor((x - this.boardLeft) / SLOT_SIZE);
+        this.showPreviewCoin();
+    }
+
+    showPreviewCoin() {
+        if (!this.canMove()) {
+            this.previewCoin.setVisible(false);
+            return;
+        }
 
         this.previewCoin
-            .setPosition(this.columnX(col), PREVIEW_Y)
+            .setPosition(this.columnX(this.selectedCol), PREVIEW_Y)
             .setFrame(this.gameCore.currentPlayer - 1)
             .setVisible(true);
     }
@@ -209,7 +258,13 @@ export class BoardScene extends Scene {
                     this.updateTurnText();
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
-                    this.showPreviewCoin(this.input.activePointer);
+                    // The preview catches up with wherever the pointer went,
+                    // or stays on the keyboard player's column.
+                    if (this.followsPointer) {
+                        this.followPointer(this.input.activePointer);
+                    } else {
+                        this.showPreviewCoin();
+                    }
                     this.onTurnStart();
                 }
             },
@@ -304,6 +359,7 @@ export class BoardScene extends Scene {
             onComplete: () => {
                 this.turnText.setVisible(true);
                 restartText.setVisible(true);
+                this.canPlayAgain = true;
                 overlay.on("pointerdown", () => this.onPlayAgain());
             },
         });
