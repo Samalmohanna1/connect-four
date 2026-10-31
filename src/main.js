@@ -5,7 +5,6 @@ import { Preloader } from "./scenes/Preloader";
 import { MainMenu } from "./scenes/MainMenu";
 import { HowTo } from "./scenes/HowTo";
 import { GameScene } from "./scenes/GameScene";
-import { MultiplayerScene } from "./scenes/MultiplayerScene";
 import { PlayerDisconnect } from "./scenes/PlayerDisconnect";
 
 const config = {
@@ -24,7 +23,7 @@ const config = {
         MainMenu,
         HowTo,
         GameScene,
-        MultiplayerScene,
+        // MultiplayerScene is added by MainMenu when multiplayer starts.
         PlayerDisconnect,
     ],
 };

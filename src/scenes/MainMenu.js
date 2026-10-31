@@ -1,13 +1,6 @@
 import { Scene } from "phaser";
 import globals from "../globals";
 import { fadeToScene } from "../fadeToScene";
-import {
-    insertCoin,
-    onPlayerJoin,
-    setState,
-    isHost,
-    myPlayer,
-} from "playroomkit";
 
 export class MainMenu extends Scene {
     constructor() {
@@ -22,14 +15,6 @@ export class MainMenu extends Scene {
         this.cameras.main.fadeIn(1000);
         this.joiningMultiplayer = false;
 
-        if (isHost()) {
-            setState("leftGame", false, true);
-        }
-
-        if (this.hasPlayroomRoomInUrl()) {
-            this.launchMultiplayer();
-        }
-
         this.add.image(globals.centerX, globals.centerY, "title");
         this.add
             .image(
@@ -40,7 +25,7 @@ export class MainMenu extends Scene {
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
             .on("pointerdown", () => fadeToScene(this, "GameScene"));
-        this.add
+        this.multiplayerBtn = this.add
             .image(
                 globals.centerX - 210,
                 globals.centerY + 100,
@@ -48,22 +33,44 @@ export class MainMenu extends Scene {
             )
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
-            .on("pointerdown", async () => {
-                await this.launchMultiplayer();
-            });
+            .on("pointerdown", () => this.launchMultiplayer());
 
         this.add
             .image(globals.centerX - 410, globals.centerY + 250, "howToBtn")
             .setInteractive({ useHandCursor: true })
             .setOrigin(0.5)
             .on("pointerdown", () => fadeToScene(this, "HowTo"));
+
+        if (this.hasPlayroomRoomInUrl()) {
+            this.launchMultiplayer();
+        }
     }
+
     async launchMultiplayer() {
         if (this.joiningMultiplayer) return;
         this.joiningMultiplayer = true;
+        // Dimmed while multiplayer downloads, which can take a moment.
+        this.multiplayerBtn.setAlpha(0.6);
 
         try {
+            // Playroom, and the React it draws its lobby with, are about half
+            // of the game's JavaScript, so they only load for multiplayer.
+            const [
+                { insertCoin, onPlayerJoin, setState, isHost, myPlayer },
+                { MultiplayerScene },
+            ] = await Promise.all([
+                import("playroomkit"),
+                import("./MultiplayerScene"),
+            ]);
+            if (!this.scene.get("MultiplayerScene")) {
+                this.scene.add("MultiplayerScene", MultiplayerScene);
+            }
+
             await insertCoin({ maxPlayersPerRoom: 2 });
+
+            if (isHost()) {
+                setState("leftGame", false, true);
+            }
 
             const players = [];
             const removeListener = onPlayerJoin((player) => {
@@ -91,6 +98,7 @@ export class MainMenu extends Scene {
         } catch (error) {
             console.error("Playroom init failed:", error);
             this.joiningMultiplayer = false;
+            this.multiplayerBtn.setAlpha(1);
         }
     }
 }
