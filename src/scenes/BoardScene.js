@@ -25,10 +25,19 @@ export class BoardScene extends Scene {
         this.setupInteraction();
         this.setupUI();
         this.updateTurnText();
+        this.onTurnStart();
     }
 
     playerName(player) {
         return `Player ${player}`;
+    }
+
+    turnLabel(player) {
+        return `${this.playerName(player)}'s Turn`;
+    }
+
+    winLabel(player) {
+        return `${this.playerName(player)} Wins!`;
     }
 
     canMove() {
@@ -37,6 +46,10 @@ export class BoardScene extends Scene {
 
     // Called with a column when canMove() is true.
     onColumnClick(col) {}
+
+    // Called when a turn begins: at the start of the game and after each
+    // coin lands, unless that coin ended the game.
+    onTurnStart() {}
 
     onBack() {}
 
@@ -197,6 +210,7 @@ export class BoardScene extends Scene {
                     this.dropZones.forEach((zone) => zone.setInteractive());
                     this.input.enabled = true;
                     this.showPreviewCoin(this.input.activePointer);
+                    this.onTurnStart();
                 }
             },
         });
@@ -208,7 +222,7 @@ export class BoardScene extends Scene {
             player === 1 ? globals.colors.red600 : globals.colors.black500;
 
         this.turnText
-            .setText(`${this.playerName(player)}'s Turn`)
+            .setText(this.turnLabel(player))
             .setStyle({ backgroundColor: bgColor });
     }
 
@@ -262,9 +276,7 @@ export class BoardScene extends Scene {
 
         this.turnText
             .setText(
-                winner === 0
-                    ? "Game Over: Draw!"
-                    : `${this.playerName(winner)} Wins!`
+                winner === 0 ? "Game Over: Draw!" : this.winLabel(winner)
             )
             .setDepth(60)
             .setX(globals.centerX)
